@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module Control UI</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="title"><pre id="art">
+▗▖ ▗▖▗▄▄▄▖▗▖  ▗▖▗▄▄▄▖▗▖   ▗▄▄▄▖▗▖  ▗▖▗▖ ▗▖
+▐▌▗▞▘  █  ▐▛▚▖▐▌▐▌   ▐▌     █  ▐▛▚▖▐▌▐▌▗▞▘
+▐▛▚▖   █  ▐▌ ▝▜▌▐▛▀▀▘▐▌     █  ▐▌ ▝▜▌▐▛▚▖ 
+▐▌ ▐▌▗▄█▄▖▐▌  ▐▌▐▙▄▄▖▐▙▄▄▖▗▄█▄▖▐▌  ▐▌▐▌ ▐▌
+</pre>
+</div>
+
+<div id="info">
+  Welcome on the Kinelink configuration page
+  Setup per module parameters, or use Global Controls to set parameters
+  on all connected modules at once.
+  Use PANIC! button to stop all ongoing motion on all connected modules.
+  <br><br>
+  Developped by e-garbage for STRUCTURALS - 2025
+</div>
+
+
+<div class="global-controls">
+  <h3>Global Controls</h3>
+  <div>  
+    <input type="number" id="global-speed" placeholder="Speed">
+    <button onclick="globalSpeed()">Set Speed</button>
+  </div>
+  <div>
+    <input type="number" id="global-accel" placeholder="Accel">
+    <button onclick="globalAccel()">Set Accel</button>
+  </div>
+  <div id="motion" style="padding-top: 3vh;padding-bottom: 3vh;">
+  <button style="color:red;font-weight: bold; border:2px solid red" onclick="panic()">PANIC!</button>
+  <button onclick="globalHome()">Set Home All</button>
+  </div>
+</div>
+
+<div id="modules-container"></div>
+
+
+<script>
+
+const API_BASE = "/api"; // through Apache proxy
+
+async function getmodules() {
+  const res = await fetch(`${API_BASE}/p/connected`);
+  const modules_resp = await res.json();
+  const modules = modules_resp.filter(addr => addr >= 10);
+  return modules
+}
+
+async function loadModules() {
+  const container = document.getElementById("modules-container");
+  container.innerHTML = "";
+
+  const modules = await getmodules();
+
+  modules.forEach(addr => {
+    const moduleDiv = document.createElement("div");
+    moduleDiv.className = "module";
+    moduleDiv.id = `module-${addr}`;
+    moduleDiv.innerHTML = `
+      <h3>Module ${addr}</h3>
+      <div id="motion">
+        <button class="m" id="mleft" onclick="moveLeft(${addr})">◄</button>
+        <button class="m" id="mstop" onclick="stop(${addr})">Stop</button>
+        <button class="m" id="mright" onclick="moveRight(${addr})">►</button>
+      </div>
+      <div class="mval" >
+        <input type="number" id="vel-${addr}" placeholder="Velocity">
+      </div>
+      <div id="motion">
+      <button class="m" onclick="setHome(${addr})">Set Home</button>
+      </div>
+      <div style="margin:1vh;">
+        <input type="number" id="goto-${addr}" placeholder="Position">
+        <button onclick="gotoPosition(${addr})">Go To</button>
+      </div>
+      <div style="margin:1vh;">
+        <input type="number" id="speed-${addr}" placeholder="Speed">
+        <button onclick="setSpeed(${addr})">Set Speed</button>
+      </div>
+      <div style="margin:1vh;">
+        <input type="number" id="accel-${addr}" placeholder="Accel">
+        <button onclick="setAccel(${addr})">Set Accel</button>
+      </div>
+      <div class="display">Temperature: <span id="temp-${addr}">0</span>°C</div>
+      <div class="display">Position: <span id="pos-${addr}">0</span></div>
+    `;
+    container.appendChild(moduleDiv);
+  });
+
+  setInterval(updateStatus, 2000);
+}
+
+// Module commands
+async function moveLeft(addr) {
+  const vel = document.getElementById(`vel-${addr}`).value || 0;
+  await fetch(`${API_BASE}/m/left?addr=${addr}&speed=${vel}`, { method: "GET" });
+}
+
+async function moveRight(addr) {
+  const vel = document.getElementById(`vel-${addr}`).value || 0;
+  await fetch(`${API_BASE}/m/right?addr=${addr}&speed=${vel}`, { method: "GET" });
+}
+
+async function stop(addr) {
+  await fetch(`${API_BASE}/m/stop?addr=${addr}`, { method: "GET" });
+}
+
+async function setHome(addr) {
+  await fetch(`${API_BASE}/m/setref?addr=${addr}`, { method: "GET" });
+}
+
+async function gotoPosition(addr) {
+  const pos = document.getElementById(`goto-${addr}`).value || 0;
+  await fetch(`${API_BASE}/m/gotopos?addr=${addr}&pos=${pos}`, { method: "GET" });
+}
+
+async function setSpeed(addr) {
+  const speed = document.getElementById(`speed-${addr}`).value || 0;
+  await fetch(`${API_BASE}/p/setspeed?addr=${addr}&speed=${speed}`, { method: "GET" });
+}
+
+async function setAccel(addr) {
+  const accel = document.getElementById(`accel-${addr}`).value || 0;
+  await fetch(`${API_BASE}/p/setaccel?addr=${addr}&accel=${accel}`, { method: "GET" });
+}
+async function panic(){
+  await fetch(`${API_BASE}/p/panic`, {method:"GET"});
+}
+
+//Update temperature and current position
+async function updateStatus() {
+  const modules = await getmodules();
+  for (const addr of modules){
+    const tempRes = await fetch(`${API_BASE}/p/gettemp?addr=${addr}`);
+    const temp = await tempRes.json();
+    document.getElementById(`temp-${addr}`).textContent=temp.reply[4];
+    const posRes = await fetch(`${API_BASE}/p/getpos?addr=${addr}`);
+    const pos = await posRes.json();
+    document.getElementById(`pos-${addr}`).textContent=pos.reply[4];
+
+
+  }
+
+  
+}
+async function globalSpeed(){
+  const modules = await getmodules();
+  let value =null;
+  value= document.getElementById("global-speed").value || 0;
+  const promises = modules.map(addr=>{
+    const url = `${API_BASE}/p/setspeed?addr=${addr}&speed=${value}`;
+    return fetch(url, {method: "GET"});
+  })
+  await Promise.all (promises);
+}
+async function globalAccel(){
+  const modules = await getmodules();
+  let value = null;
+  value = document.getElementById("global-accel").value || 0;
+  const promises = modules.map (addr =>{
+    const url =`${API_BASE}/p/setaccel?addr=${addr}&accel=${value}`;
+    return fetch(url, {method: "GET"});
+  })
+  await Promise.all(promises);
+}
+
+async function globalHome() {
+const modules = await getmodules();
+  const promises = modules.map(addr =>{
+    const url = `${API_BASE}/m/setref?addr=${addr}`;
+    return fetch(url, {method: "GET"});
+  })
+  await Promise.all(promises);
+  
+  
+}
+
+window.onload = loadModules;
+</script>
+</body>
+</html>
