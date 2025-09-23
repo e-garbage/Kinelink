@@ -88,7 +88,7 @@ After=network.target
 [Service]
 User=$USER
 WorkingDirectory=/opt/kinelink
-ExecStart=/opt/kinelink/.venvkinelink/bin/python3 kinelink.py --serial_port $SERIAL_PORT --baudrate 9600 --api_ip 127.0.0.1 --api_port 8000
+ExecStart=/opt/kinelink/.venvkinelink/bin/python3 kinelink.py
 Restart=always
 
 [Install]
