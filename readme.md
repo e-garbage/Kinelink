@@ -24,7 +24,7 @@ It includes:
 Want to start Kinelink quickly on any Debian machine? Copy Paste this single command line into your terminal :) That's it
 
 ```
-sudo bash <(curl -fsSL https://raw.githubusercontent.com/e-garbage/Kinelink/main/setup_kinelink.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/e-garbage/Kinelink/main/setup_kinelink.sh)
 
 ```
 
