@@ -4,3 +4,4 @@ fastapi
 rich
 argparse
 pyserial-asyncio
+uvicorn
