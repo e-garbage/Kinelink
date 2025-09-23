@@ -1,0 +1,7 @@
+asyncio
+logging
+fastapi
+rich
+argparse
+struct
+pyserial-asyncio
