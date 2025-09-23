@@ -86,10 +86,11 @@ Description=Kinelink Motor Control
 After=network.target
 
 [Service]
+Type = Simple
 User=$USER
 WorkingDirectory=/opt/kinelink
-ExecStart=/opt/kinelink/.venvkinelink/bin/python3 kinelink.py
-Restart=always
+ExecStart=/opt/kinelink/.venvkinelink/bin/python3 /opt/kinelink/kinelink.py
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
