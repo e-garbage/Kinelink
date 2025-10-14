@@ -37,7 +37,7 @@ a=artnet parameters
 """
 
 app = FastAPI()
-app.state.universe
+app.state.universe = 0
 origins=[
     "http://localhost",
     "http://localhost:80",
