@@ -37,6 +37,12 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
     def __init__(self, motor_manager=None, universe=0):
         self.motor_manager = motor_manager
         self.universe = universe
+    # to use when universe is made accessible through API.
+    #work in progress
+    def set_universe (self, new_universe:int):
+        """Dynamically update artnet universe"""
+        logging.info(f"Art-Net universe changed from {self.universe} to {new_universe}")
+        self.universe=new_universe
 
     def connection_made(self, transport):
         self.transport = transport

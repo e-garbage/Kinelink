@@ -132,6 +132,9 @@ padding: 1vh;
 
 <div class="global-controls">
   <h3>Global Controls</h3>
+  <div id="universe-display">
+    Universe: <span id="universe-value">loading...</span>
+  </div>
   <div>  
     <input type="number" id="global-speed" placeholder="Speed">
     <button onclick="globalSpeed()">Set Speed</button>
@@ -161,6 +164,7 @@ async function init() {
   modules = addr.filter(a => a >= 10);
 }
 async function loadModules() {
+  fetchUniverse();
   const m = await init();
   const container = document.getElementById("modules-container");
   container.innerHTML = "";
@@ -276,6 +280,12 @@ async function globalHome() {
     return fetch(url, {method: "GET"});
   })
   await Promise.all(promises);
+}
+
+async function fetchUniverse() {
+  const response = await fetch(`${API_BASE}/p/get_universe`);
+  const data = await response.json();
+  document.getElementById('universe-value').textContent=data.universe;
 }
 
 window.onload = loadModules();

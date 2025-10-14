@@ -48,6 +48,7 @@ async def start_artnet(interface, port, universe, motor_manager=None):
     )    
 
 async def start_api():
+    web_api.app.state.univers=ARTNET_UNIVERSE
     config =uvicorn.Config(web_api.app, host=API_IP, port=API_PORT, log_level="debug")
     server = uvicorn.Server(config)
     await server.serve()

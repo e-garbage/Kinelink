@@ -37,6 +37,7 @@ a=artnet parameters
 """
 
 app = FastAPI()
+app.state.universe
 origins=[
     "http://localhost",
     "http://localhost:80",
@@ -54,6 +55,8 @@ origins=[
 motor_manager: MotorManager | None = None
 top_speed=1000 ### TMCL motors allows speed from 1 to 2047, for safety reason it can be limited here to avoid crazy behaviour due to internet loss or bugs
 top_accel=1000 ### Same as top speed, top accel in TMCL is in the range of 1 to 2047, but limited here for safety reasons
+
+universe: None
 
 @app.on_event("startup") ######### on_event deprecated, change for lifespan if possible (check)
 async def startup_event():
@@ -129,7 +132,7 @@ async def m_gotopos(
 
 # motor parameters command
 
-#set max not working - placeholder command
+#set max
 @app.get("/p/setmax", description="Set maximum position possible (limit switch) using SAP command")
 async def p_setmax(
     addr: int = Query(..., description="Module (motor) Address 0-255"),
@@ -143,7 +146,6 @@ async def p_setmax(
         addr=0
         e=(e or "")+f"Wrong input address. address set to {addr}. "
     motor_manager.connected[addr]["maxpos"]=int(pos)
-    #reply = await motor_manager.sap(addr, 1, 0, pos)
     return {"call from":"p_setmax", "api error":e}
 
 @app.get("/p/setspeed", description="Set maximum speed for motion command like /m/gotopos using SAP command. /m/left and /m/right overides this with their speed value")
@@ -217,6 +219,11 @@ async def p_connected():
     if motor_manager is None:
         return []
     return motor_manager.connected
+
+
+@app.get("/p/get_universe", description="gives the current art-net universe in use on the node")
+async def p_get_universe():
+    return {"universe": app.state.universe}
 
 
 
