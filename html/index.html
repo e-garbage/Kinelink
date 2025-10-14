@@ -283,7 +283,7 @@ async function globalHome() {
 }
 
 async function fetchUniverse() {
-  const response = await fetch(`${API_BASE}/p/get_universe`);
+  const response = await fetch(`${API_BASE}/p/get_universe`, {method: "GET"});
   const data = await response.json();
   document.getElementById('universe-value').textContent=data.universe;
 }
