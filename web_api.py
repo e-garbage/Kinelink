@@ -35,7 +35,7 @@ p=motor parameters
 a=artnet parameters
 
 """
-
+#okkkk
 app = FastAPI()
 app.state.universe = 0
 origins=[
