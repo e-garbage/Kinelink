@@ -75,6 +75,11 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
             CH4 - move to absolute position
             CH5 - homing
         """
+        # --- DMX frame deduplication ---
+        if hasattr(self, "_last_dmx_data") and dmx_data == self._last_dmx_data:
+            return  # Drop identical frame silently
+        self._last_dmx_data = dmx_data
+
         for motor_addr, connected in motor_manager.connected.items():
             base = motor_addr-1
             if base <0 :
