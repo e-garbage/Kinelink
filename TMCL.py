@@ -103,7 +103,6 @@ class MotorManager:
         self.default_maxpos = default_maxpos
         self.command_queue = asyncio.Queue()
 
-    
     async def initialize(self,s, acc):
         logging.info("Initializing connected motors - Setting up current position as home")
         await self.scan()
@@ -237,7 +236,7 @@ class MotorManager:
     async def scan(self):
         logging.info(f"Scanning available TMCL motors over {self.port}")
         found = {}
-        for addr in range(25):
+        for addr in range(255):
             await asyncio.sleep(timeout)
             try:
                 resp = await self.gio(addr, 9, 1) # temperature query

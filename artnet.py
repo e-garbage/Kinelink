@@ -34,8 +34,9 @@ class utils():
         return ((x - src_min) / (src_max - src_min)) * (dst_max - dst_min) + dst_min
     
 class ArtNetProtocol(asyncio.DatagramProtocol):
-    def __init__(self, motor_manager=None):
+    def __init__(self, motor_manager=None, universe=0):
         self.motor_manager = motor_manager
+        self.universe = universe
 
     def connection_made(self, transport):
         self.transport = transport
@@ -46,6 +47,9 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
             return
         opcode = struct.unpack("<H", data[8:10])[0]
         if opcode != OPCODE_DMX:
+            return
+        universe = struct.unpack("<H", data[14:16])[0]
+        if universe != self.universe:
             return
         length = struct.unpack(">H", data[16:18])[0]
         dmx_data = data[18:18+length]

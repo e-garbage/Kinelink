@@ -8,11 +8,10 @@ from rich.logging import RichHandler
 from rich.console import Console
 import os
 import argparse
-import math
-import time
+
 
 #CHANGE VERSION NUMBER HERE
-version=1.0
+version=1.1
 console=Console()
 
 class utils: 
@@ -41,10 +40,10 @@ class utils:
         LOGGING_FORMAT='%(message)s'
         logging.basicConfig(level=log_mod, format=LOGGING_FORMAT, handlers=[RichHandler(rich_tracebacks=False, show_path=False, markup=True)])
     
-async def start_artnet(interface, port, motor_manager=None):
+async def start_artnet(interface, port, universe, motor_manager=None):
     loop= asyncio.get_running_loop()
     transport, protocol = await loop.create_datagram_endpoint(
-        lambda: ArtNetProtocol(motor_manager),
+        lambda: ArtNetProtocol(motor_manager, universe),
         local_addr=(interface, port)
     )    
 
@@ -59,7 +58,7 @@ async def main():
     await motor_manager.start()
     await asyncio.sleep(1)
     await motor_manager.initialize(S, ACC)
-    await asyncio.gather(start_api(), start_artnet(ARTNET_IP, ARTNET_PORT, motor_manager))
+    await asyncio.gather(start_api(), start_artnet(ARTNET_IP, ARTNET_PORT,ARTNET_UNIVERSE, motor_manager))
 
 if __name__ == "__main__":
     #clear terminal
@@ -80,6 +79,11 @@ if __name__ == "__main__":
                         type=str,
                         default="0.0.0.0",
                         help="ArtNet IP to listen to (ie your the control surface) default is 0.0.0.0, this means it listen to any incoming ArtNet packet")
+    parser.add_argument("-au",
+                        "--artnet_universe",
+                        type=int,
+                        default=0,
+                        help="Artnet listening Universe, default 0")
     parser.add_argument("-sp",
                         "--serial_port",
                         type=str,
@@ -126,6 +130,7 @@ if __name__ == "__main__":
     #define constants:
     ARTNET_PORT=args.artnet_port
     ARTNET_IP=args.artnet_ip
+    ARTNET_UNIVERSE=args.artnet_universe
     SERIAL_PORT=args.serial_port
     BAUDRATE=args.baudrate
     API_IP=args.api_ip
