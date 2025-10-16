@@ -35,7 +35,7 @@ class utils:
         if verbose == True:
             log_mod=logging.DEBUG
         else:
-            log_mod=logging.INFO
+            log_mod=logging.WARNING
 
         LOGGING_FORMAT='%(message)s'
         logging.basicConfig(level=log_mod, format=LOGGING_FORMAT, handlers=[RichHandler(rich_tracebacks=False, show_path=False, markup=True)])

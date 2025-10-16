@@ -102,6 +102,7 @@ class MotorManager:
         self.default_accel = default_accel
         self.default_maxpos = default_maxpos
         self.command_queue = asyncio.Queue()
+        self.motor_queues={}
 
     async def initialize(self,s, acc):
         logging.info("Initializing connected motors - Setting up current position as home")
@@ -113,6 +114,9 @@ class MotorManager:
                 await self.sap(a,1,0)  #set current position as Home (0)
                 await self.sap(a, 4, s) # set max speed as s
                 await self.sap(a, 5, acc) #set max accel
+                q = asyncio.Queue(maxsize=1)  # Only keep the latest command
+                self.motor_queues[a] = q
+                asyncio.create_task(self._motor_worker(a, q))
 
 
             except Exception as e:
@@ -143,6 +147,17 @@ class MotorManager:
             else:
                 future.set_exception(RuntimeError("No transport available"))
             await asyncio.sleep(0.005)
+
+    async def _motor_worker(self, addr, queue):
+        """Sequential command executor per motor."""
+        while True:
+            cmd, args = await queue.get()
+            try:
+                await cmd(*args)
+            except Exception as e:
+                logging.warning(f"Motor {addr} worker error: {e}")
+            finally:
+                queue.task_done()
 
     def tmcl_packet_builder(self, addr:int, cmd:int, typ:int, bank:int, value:int):
         """

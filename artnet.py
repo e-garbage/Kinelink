@@ -64,6 +64,7 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
     def error_received(self, exc):
         logging.error(f"Art-Net receive error: {exc}")
 
+
     def _process_dmx(self, dmx_data: bytes, motor_manager):
         """
         Process incoming DMX data and trigger TMCL commands.
@@ -82,49 +83,69 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
 
         for motor_addr, connected in motor_manager.connected.items():
             base = motor_addr-1
-            if base <0 :
-                continue
-            if base+4 >=len(dmx_data):
+            if base <0 or base+4 >=len(dmx_data):
                 continue
             try:
                 ch1, ch2, ch3, ch4, ch5 = dmx_data[base:base+5]
                 logging.debug(f"{motor_addr,ch1,ch2,ch3,ch4,ch5}")
                 maxpos = connected.get("maxpos")
                 maxspeed = connected.get("speed")
+                q= motor_manager.motor_queues.get(motor_addr)
+                if not q :
+                    continue
+                # --- Clear old pending commands ---
+                while not q.empty():
+                    try:
+                        q.get_nowait()
+                        q.task_done()
+                    except asyncio.QueueEmpty:
+                        break
+
                 # --- CH1: Bidirectional speed ---
                 if 2 <= ch1 <= 127:  # move left
                     speed = int(utils.map_value(ch1, 2,127,maxspeed, 1))
-                    asyncio.create_task(motor_manager.ror(motor_addr, speed))
+                    #asyncio.create_task(motor_manager.ror(motor_addr, speed))
+                    q.put_nowait((motor_manager.ror, (motor_addr, speed)))
                 elif ch1 == 128:  # stop
-                    asyncio.create_task(motor_manager.mst(motor_addr))
+                    #asyncio.create_task(motor_manager.mst(motor_addr))
+                    q.put_nowait((motor_manager.mst, (motor_addr)))
                 elif 129 <= ch1 <= 255:  # move right
                     speed = int(utils.map_value(ch1, 129,255,1, maxspeed))
-                    asyncio.create_task(motor_manager.rol(motor_addr, speed))
+                    #asyncio.create_task(motor_manager.rol(motor_addr, speed))
+                    q.put_nowait((motor_manager.rol, (motor_addr, speed)))
 
                 # --- CH2: Move left ---
                 elif 3 <= ch2 <= 255:
                     speed = int(utils.map_value(ch1, 3,255,1, maxspeed))
-                    asyncio.create_task(motor_manager.ror(motor_addr, speed))
+                    #asyncio.create_task(motor_manager.ror(motor_addr, speed))
+                    q.put_nowait((motor_manager.ror, (motor_addr, speed)))
                 elif 1 <= ch2 <= 2:
-                    asyncio.create_task(motor_manager.mst(motor_addr))
+                    #asyncio.create_task(motor_manager.mst(motor_addr))
+                    q.put_nowait((motor_manager.mst, (motor_addr)))
 
                 # --- CH3: Move right ---
                 elif 3 <= ch3 <= 255:
                     speed = int(utils.map_value(ch1, 3,255,1, maxspeed))
-                    asyncio.create_task(motor_manager.rol(motor_addr, speed))
+                    #asyncio.create_task(motor_manager.rol(motor_addr, speed))
+                    q.put_nowait((motor_manager.rol, (motor_addr, speed)))
                 elif 1 <= ch3 <= 2:
-                    asyncio.create_task(motor_manager.mst(motor_addr))
+                    #asyncio.create_task(motor_manager.mst(motor_addr))
+                    q.put_nowait((motor_manager.mst, (motor_addr)))
 
                 # --- CH4: Move to position ---
                 if ch4 >= 2:
                     pos = int(utils.map_value(ch4, 2,255,1,maxpos ))
-                    asyncio.create_task(motor_manager.mvp(motor_addr, 0, 0, pos))
+                    #asyncio.create_task(motor_manager.mvp(motor_addr, 0, 0, pos))
+                    q.put_nowait((motor_manager.mvp, (motor_addr, 0,0, pos)))
 
                 # --- CH5: Homing ---
                 if ch5 >= 2:
-                    asyncio.create_task(motor_manager.mvp(motor_addr, 0, 0, 0))
+                    #asyncio.create_task(motor_manager.mvp(motor_addr, 0, 0, 0))
+                    q.put_nowait((motor_manager.mvp, (motor_addr, 0,0, 0)))
             except IndexError:
                 continue
             except Exception as e:
                 logging.warning(f"Error processing DMX for motor {motor_addr}: {e}")
+
+
 
