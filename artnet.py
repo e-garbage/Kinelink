@@ -88,7 +88,7 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
                 continue
             try:
                 ch1, ch2, ch3, ch4, ch5 = dmx_data[base:base+5]
-                logging.debug(ch1,ch2,ch3,ch4,ch5)
+                logging.debug(f"{motor_addr,ch1,ch2,ch3,ch4,ch5}")
                 maxpos = connected.get("maxpos")
                 maxspeed = connected.get("speed")
                 # --- CH1: Bidirectional speed ---
