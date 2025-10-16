@@ -65,7 +65,6 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
         logging.error(f"Art-Net receive error: {exc}")
 
     def _process_dmx(self, dmx_data: bytes, motor_manager):
-        logging.debug(dmx_data)
         """
         Process incoming DMX data and trigger TMCL commands.
         Each motor consumes 5 channels:
@@ -77,6 +76,7 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
         """
         # --- DMX frame deduplication ---
         if hasattr(self, "_last_dmx_data") and dmx_data == self._last_dmx_data:
+            logging.debug("artnet dropped")
             return  # Drop identical frame silently
         self._last_dmx_data = dmx_data
 
@@ -88,6 +88,7 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
                 continue
             try:
                 ch1, ch2, ch3, ch4, ch5 = dmx_data[base:base+5]
+                logging.debug(ch1,ch2,ch3,ch4,ch5)
                 maxpos = connected.get("maxpos")
                 maxspeed = connected.get("speed")
                 # --- CH1: Bidirectional speed ---
