@@ -65,7 +65,7 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
         logging.error(f"Art-Net receive error: {exc}")
 
     def _process_dmx(self, dmx_data: bytes, motor_manager):
-        
+        logging.debug(dmx_data)
         """
         Process incoming DMX data and trigger TMCL commands.
         Each motor consumes 5 channels:
