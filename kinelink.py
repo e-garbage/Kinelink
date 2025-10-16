@@ -11,7 +11,7 @@ import argparse
 
 
 #CHANGE VERSION NUMBER HERE
-version=1.1
+version=1.2
 console=Console()
 
 class utils: 
