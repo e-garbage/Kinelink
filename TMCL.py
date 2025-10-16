@@ -38,7 +38,7 @@ class MotorProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        logging.info("Serial connection established")
+        logging.info("Serial connection established !")
     
     def data_received(self, data):
         self.buffer += data
@@ -60,7 +60,7 @@ class MotorProtocol(asyncio.Protocol):
                     logging.error(f"Failed to parse TMCL frame: {e}")
 
     def connection_lost(self, exc):
-        logging.info("Serial connection lost")
+        logging.warning("Serial connection lost")
         if self.response_future and not self.response_future.done():
             self.response_future.set_exception(exc or ConnectionError("Serial connection lost"))
         self.transport = None
@@ -105,9 +105,10 @@ class MotorManager:
         self.motor_queues={}
 
     async def initialize(self,s, acc):
-        logging.info("Initializing connected motors - Setting up current position as home")
+        logging.info("Initializing connected motors, please wait ...")
         await self.scan()
         logging.info(f"Scan complete - found {len(self.connected)}")
+        logging.info("Setting up current position as home for each ...")
         for a in self.connected:
             try:
                 await self.mst(a) #stop any ongoing motion for safety reasons
@@ -227,7 +228,7 @@ class MotorManager:
         }
 
         if status == 100:
-            logging.info(f"{status} - TMCL command {cmd} executed successfully")
+            logging.debug(f"{status} - TMCL command {cmd} executed successfully")
         elif status in status_messages:
             logging.error(status_messages[status])
             return None
@@ -249,7 +250,7 @@ class MotorManager:
         return reply_addr, addr, status, cmd, value
 
     async def scan(self):
-        logging.info(f"Scanning available TMCL motors over {self.port}")
+        logging.debug(f"Scanning available TMCL motors over {self.port}")
         found = {}
         for addr in range(255):
             await asyncio.sleep(timeout)
