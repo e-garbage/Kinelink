@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Query
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Query, Request
+#from fastapi.middleware.cors import CORSMiddleware
 from TMCL import MotorManager
+from pathlib import Path
 import logging
+import os, json
 
 """
 API commands:
@@ -35,8 +37,14 @@ p=motor parameters
 a=artnet parameters
 
 """
-#okkkk
+
+
+BASE_DIR = Path(__file__).resolve().parent
+CONFIG_DIR = BASE_DIR / "configs"
+os.makedirs(CONFIG_DIR, exist_ok=True)
 app = FastAPI()
+
+
 app.state.universe = 0
 origins=[
     "http://localhost",
@@ -131,8 +139,6 @@ async def m_gotopos(
     return {"call from":"m_gotopos","reply":reply, "api error":e}
 
 # motor parameters command
-
-#set max
 @app.get("/p/setmax", description="Set maximum position possible (limit switch) using SAP command")
 async def p_setmax(
     addr: int = Query(..., description="Module (motor) Address 0-255"),
@@ -225,6 +231,52 @@ async def p_connected():
 async def p_get_universe():
     return {"universe": app.state.universe}
 
+### Configuration Save and Recall
 
+@app.post("/c/save_config")
+async def save_config(request:Request):
+    data = await request.json()
+    save_name = data.get("name", "unnamed")
+    is_default = data.get("default", False)
+    config = data.get ("config",{})
+    path = os.path.join(CONFIG_DIR, f"{save_name}.json")
+    try:
+        with open(path, "w") as f:
+            json.dump(config, f, indent=4)
+        if is_default:
+            default_path =os.path.join(CONFIG_DIR, "default.json")
+            if os.path.exists(default_path):
+                os.remove(default_path)
+            os.symlink(path, default_path)
+        return{"status": "ok", "message": f"Configuration saved as '{save_name}'"}
+    except Exception as e:
+        return{"status":"error", "message": str(e)}
+    
+@app.get("/c/list_config")
+async def list_configs():
+    configs = []
+    for file in os.listdir(CONFIG_DIR):
+        if file.endswith(".json"):
+            path = os.path.join(CONFIG_DIR, file)
+            is_default = os.path.islink(path) and os.path.basename(os.readlink(path)) == "default.json"
+            configs.append({
+                "name": file.replace(".json", ""),
+                "is_default": file == "default.json"
+            })
+    return configs
 
-
+@app.get("/c/load_config/{name}")
+async def load_config(name: str):
+    path = os.path.join(CONFIG_DIR, f"{name}.json")
+    if not os.path.exists(path):
+        return {"status": "error", "message": f"No config named {name}"}
+    with open(path, "r") as f:
+        return json.load(f)
+    
+@app.delete("/c/delete_config/{name}")
+async def delete_config(name: str):
+    path = os.path.join(CONFIG_DIR, f"{name}.json")
+    if not os.path.exists(path):
+        return {"status": "error", "message": f"No config named {name}"}
+    os.remove(path)
+    return {"status": "ok", "message": f"Deleted {name}.json"}
