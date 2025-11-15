@@ -1,161 +1,503 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Module Control UI</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kinelink Configuration</title>
 <style>
-  :root{
---txcol: #00e89d;
---bckcol: #333;
---bckbx: rgb(27, 27, 27);
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+/*---------------------------*/
+/* BUTTON STYLING */
+/*---------------------------*/
+
+button {
+    background: #363636;
+    color: #e7e7e7;
+    border:none;
+    padding: 7px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    user-select: none;
+}
+
+button:hover {
+    background: #4b4b4b;
+    border-color: #4fa3ff;
+    color: #ffffff;
+    box-shadow: 0 0 10px #4fa3ff55;
+}
+
+button:active {
+    transform: scale(0.96);
+    background: #333333;
+    box-shadow: 0 0 4px #4fa3ff99 inset;
+}
+
+button.disabled,
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+select{
+    background: #363636;
+    color: #e7e7e7;
+    border: 1px solid #3a3a3a;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    user-select: none;
+}
+select:hover {
+    background: #4b4b4b;
+    border-color: #4fa3ff;
+    color: #ffffff;
+    box-shadow: 0 0 10px #4fa3ff55;
+}
+
+select:active {
+    transform: scale(0.96);
+    background: #333333;
+    box-shadow: 0 0 4px #4fa3ff99 inset;
+}
+
+select.disabled,
+select:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+
+
+
+/* ------------------------- */
+/* GLOBAL DARK THEME */
+/* ------------------------- */
+:root {
+    --bg: #141414;
+    --panel: #1b1b1b;
+    --panel-light: #1d1d1d;
+    --accent: #4fa3ff;
+    --text: #e7e7e7;
+    --text-dim: #a0a0a0;
+    --radius: 12px;
+    --transition: 0.25s;
 }
 
 body {
-font-family:monospace;
-color: var(--txcol);
-padding-left: 5vw;
-padding-right: 5vw;
-background-color: rgb(27, 27, 27);
-font-size: x-large;}
-
-.module {
-border: 2px solid var(--txcol);
-background-color: var(--bckbx);
-width: 800px;
-padding: 1vh;
-margin: 2vh auto 2vh auto;
-display: inline-block;
-vertical-align: top; }
-
-.module h3 { margin-top: 0; }
-
-button {
-    border: 2px solid var(--txcol);
-    background-color: var(--bckbx);
-    color: var(--txcol);
-}
-button:active{
-    background-color: var(--txcol);
-    color: var(--bckbx);
-}
-
-button:hover{
-    background-color: var(--bckcol);
-}
-input{
-    background-color: var(--bckcol);
-    color: #00e89d;
+    margin: 0;
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+    font-variation-settings:"wdth" 100;
     font-weight: lighter;
-    font-size: 2vh;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
 }
 
-.display { margin-top: 5px;
-font-weight: bold; }
-
-.global-controls { 
-margin: 3vh auto 3vh auto;
-padding: 1vh;
-border: 2px solid var(--txcol);
+/* ------------------------- */
+/* TOP FIXED BAR */
+/* ------------------------- */
+#topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 56px;
+    width: 100%;
+    background: var(--panel-light);
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: center;
+    padding-left: 25px;
+    font-size: 22px;
+    font-weight: 600;
+    z-index: 20;
 }
 
-.global-controls button{
-    width: 30vw;
-    height: 5vh;
-    font-size: 2vh;
-    padding: 1vw 1vh 1vw 1vh;
-    margin: 0.5vh;
-
+/* Add responsive right-aligned art-net block */
+.art-net-monitor {
+    /* replaced fixed 50vw push with flex-auto to keep it inside the topbar */
+    margin-left: auto;
+    margin-right: 5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 0.75rem;
+    min-width: 0;               /* allow children to shrink */
+    max-width: 45%;             /* responsive cap; adjust as needed */
+    overflow: hidden;           /* prevent overflow on small screens */
+    box-sizing: border-box;
+}
+.art-net-monitor span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;    /* truncate long text responsively */
+    font-size: small;
+    font-weight: lighter;
+    max-width: calc(100% - 32px); /* leave room for the icon */
 }
 
-.global-controls input{
-    width: 35vw;
-    height: auto;
+/* ensure icon doesn't shrink awkwardly */
+.art-net-monitor svg {
+    flex: 0 0 auto;
 }
 
-#title{
-  width: 100%;
-  overflow-x: auto;     /* scroll if it overflows horizontally */
-  text-align: center; 
-}
-#art{
-  font-family: monospace;
-  font-size: clamp(8px, 2vw, 20px); /* responsive font size */
-  line-height: 1.2;
-  white-space: pre;     /* preserve spacing */
-  margin: 0 auto;
-  display: inline-block
-}
-#motion{
-    margin: auto;
-    text-align: center;
-
+/* tighten layout on narrow screens */
+@media (max-width: 600px) {
+    .art-net-monitor {
+        max-width: 60%;
+        padding-right: 0.5rem;
+    }
+    .art-net-monitor span {
+        font-size: x-small;
+    }
 }
 
-.m{
-    margin: 2vw;
-    font-size: 3vh;
-    padding: 1vw 1vh 1vw 1vh;
+/* ------------------------- */
+/* COLLAPSIBLE SIDE BAR */
+/* ------------------------- */
+#sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    width: 260px;
+    height: calc(100% - 56px);
+    background: var(--panel);
+    border-right: 1px solid #333;
+    transition: var(--transition);
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 10;
+    padding-top: 10px;
+}
+
+#sidebar.collapsed {
+    width: 70px;
+}
+
+/* Sidebar item */
+.sidebar-item {
+    height: 56px; /* ⬅️ FIXED HEIGHT ALWAYS */
+    padding: 0 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid #333;
+    transition: background 0.2s;
+}
+
+.sidebar-item:hover {
+    background: #333;
+}
+
+.sidebar-icon {
+    font-size: 22px;
+    width: 24px;
+    height: 30px;
+}
+
+.sidebar-label {
+    white-space: nowrap;
+    transition: var(--transition);
+    font-size: 15px;
+    font-weight: normal;
+}
+
+/* When collapsed → hide labels but keep height */
+#sidebar.collapsed .sidebar-label {
+    opacity: 0;
+    width: 0;
+    pointer-events: none;
+}
+
+/* ------------------------- */
+/* SECTION PARAMETER AREAS */
+/* ------------------------- */
+.sidebar-section {
+    padding: 14px 18px;
+    border-bottom: 1px solid #333;
+    transition: var(--transition);
+}
+
+.sidebar-section h3 {
+    margin: 5px 0 12px;
+    font-size: 16px;
+}
+
+.sidebar-section input {
+    width: 120px;
+    padding: 7px;
+    border-radius: var(--radius);
+    background: #333;
+    border: none;
+    outline: none;
+    color: var(--text);
+    margin-bottom: 10px;
+}
+
+/* Hide sections when collapsed */
+#sidebar.collapsed .sidebar-section {
+    display: none !important;
+}
+
+/* ------------------------- */
+/* MAIN CONTAINER AREA */
+/* ------------------------- */
+#container {
+    margin-left: 70px;
+    flex: 1;
+    padding: 80px 25px 25px;
+    overflow-y: auto;
+    transition: var(--transition);
+}
+
+#container.collapsed {
+    margin-left: 70px;
+}
+
+/* Motor block placeholder */
+.module-block {
+    background: var(--panel);
+    padding: 18px;
+    border-radius: var(--radius);
+    margin-bottom: 15px;
+    
+}
+
+.module-block input {
+    width: 120px;
+    padding: 7px;
+    border-radius: var(--radius);
+    background: #333;
+    border: none;
+    outline: none;
+    color: var(--text);
+}
+
+.module-block-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+
+.module-block-title svg {
+    flex-shrink: 0;
+}
+
+#motion {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+
+#motion .m {
+    min-width: 48px;
+    min-height: 50px;
+    padding: 0 12px;
 }
 
 .mval{
-    margin: auto;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 8px;
+}
+.mval input{
+    width: 200px;
 }
 
-#info{ 
-border: 2px solid var(--txcol);
-display: block;
-margin: 2vh auto 2vh auto;
-padding: 1vh;
+/* Collapsible module parameter panel */
+.collapsible-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 8px;
+    margin-top: 8px;
+    user-select: none;
 }
+.collapsible-title .label {
+    font-weight: 600;
+    font-size: 14px;
+}
+.collapsible-title .arrow {
+    transition: transform 0.25s ease;
+    font-size: 14px;
+}
+.collapsible-content {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.28s ease;
+    padding-top: 0;
+}
+.collapsible-content.open {
+    padding-top: 10px;
+}
+/* small layout for the parameter rows inside the panel */
+.param-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 6px 0;
+    flex-wrap: wrap;
+}
+.param-row input[type="number"] {
+    width: 100px;
+}
+.param-row button {
+    white-space: nowrap;
+    width: 80px;
+}
+
 
 </style>
 </head>
 <body>
-<div id="title"><pre id="art">
-▗▖ ▗▖▗▄▄▄▖▗▖  ▗▖▗▄▄▄▖▗▖   ▗▄▄▄▖▗▖  ▗▖▗▖ ▗▖
-▐▌▗▞▘  █  ▐▛▚▖▐▌▐▌   ▐▌     █  ▐▛▚▖▐▌▐▌▗▞▘
-▐▛▚▖   █  ▐▌ ▝▜▌▐▛▀▀▘▐▌     █  ▐▌ ▝▜▌▐▛▚▖ 
-▐▌ ▐▌▗▄█▄▖▐▌  ▐▌▐▙▄▄▖▐▙▄▄▖▗▄█▄▖▐▌  ▐▌▐▌ ▐▌
-</pre>
+
+<!-- TOP BAR -->
+<div id="topbar">
+    <pre style="font-weight: bolder;">KINELINK</pre>
+        <div class="art-net-monitor" style="background-color:red;border-radius: var(--radius);" onclick="setArtnet()">
+        <span id="art-net-text">Art-Net OFF</span>
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" class="Icon-module_icon__2a0I8 Icon-module_icon-light__27kpC Icon-module_icon-twoTone__RIhpv" baseclassname="" twotonedclassname="Icon-module_twoTone__jXINr" fillclassname="Icon-module_hidden__cSK0B" fillwithtwotoneclassname="Icon-module_hidden__cSK0B" stroke="currentColor" stroke-width="0"><path fill-rule="evenodd" clip-rule="evenodd" d="M17 5a2 2 0 1 1 3.999-.001A2 2 0 0 1 17 5Zm3 0c0-.551-.449-1-1-1-.551 0-1 .449-1 1 0 .551.449 1 1 1 .551 0 1-.449 1-1Zm-3 7a2 2 0 1 1 3.999-.001A2 2 0 0 1 17 12Zm3 0c0-.551-.449-1-1-1-.551 0-1 .449-1 1 0 .551.449 1 1 1 .551 0 1-.449 1-1Zm-1 5a2 2 0 1 0-.001 3.999A2 2 0 0 0 19 17Zm0 1c.551 0 1 .449 1 1 0 .551-.449 1-1 1-.551 0-1-.449-1-1 0-.551.449-1 1-1ZM15.5 5.5H15A2.5 2.5 0 0 0 12.5 8v3.5h3a.5.5 0 0 1 0 1h-3V16a2.5 2.5 0 0 0 2.5 2.5h.5a.5.5 0 0 1 0 1H15a3.5 3.5 0 0 1-3.5-3.5v-3.5H9.965a3.5 3.5 0 0 1-6.956-.751 3.51 3.51 0 0 1 3.243-3.24A3.501 3.501 0 0 1 9.965 11.5H11.5V8A3.5 3.5 0 0 1 15 4.5h.5a.5.5 0 0 1 0 1ZM4 12c0 1.379 1.12 2.5 2.5 2.5C7.879 14.5 9 13.379 9 12S7.879 9.5 6.5 9.5A2.502 2.502 0 0 0 4 12Z" fill="currentColor" class=""></path></svg> 
+    </div>
+
 </div>
 
-<div id="info">
-  Welcome on the Kinelink configuration page
-  Setup per module parameters, or use Global Controls to set parameters
-  on all connected modules at once.
-  Use PANIC! button to stop all ongoing motion on all connected modules.
-  <br><br>
-  Developped by e-garbage for STRUCTURALS - 2025
+<!-- SIDE BAR -->
+<div id="sidebar" class="collapsed">
+
+    <!-- GLOBAL SETTINGS ICON -->
+    <div class="sidebar-item" onclick="openPanel('global')">
+        <div class="sidebar-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" class="Icon-module_icon__2a0I8 Icon-module_icon-light__27kpC Icon-module_icon-twoTone__RIhpv Icon-module_active__2qG4Y" baseclassname="" twotonedclassname="Icon-module_twoTone__jXINr" fillclassname="Icon-module_hidden__cSK0B" fillwithtwotoneclassname="Icon-module_hidden__cSK0B" stroke="currentColor" stroke-width="0"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.5 12a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0Zm6 0c0-1.378-1.121-2.5-2.5-2.5A2.503 2.503 0 0 0 9.5 12c0 1.378 1.121 2.5 2.5 2.5s2.5-1.122 2.5-2.5Z" fill="currentColor" class=""></path><path fill-rule="evenodd" clip-rule="evenodd" d="M22 13.153a1 1 0 0 1-.836.986l-1.529.255a7.819 7.819 0 0 1-.544 1.311l.901 1.262a1 1 0 0 1-.106 1.288l-1.63 1.63a1 1 0 0 1-1.288.107l-1.262-.901a7.914 7.914 0 0 1-1.312.544l-.255 1.53a1 1 0 0 1-.986.835h-2.306a1 1 0 0 1-.986-.836l-.255-1.529a7.914 7.914 0 0 1-1.312-.544l-1.262.901a1 1 0 0 1-1.288-.106l-1.63-1.63a1 1 0 0 1-.107-1.29l.902-1.261a7.819 7.819 0 0 1-.544-1.311l-1.53-.255A1 1 0 0 1 2 13.153v-2.306a1 1 0 0 1 .836-.986l1.529-.255c.142-.456.325-.895.544-1.312l-.902-1.262a1 1 0 0 1 .107-1.288l1.63-1.63a1 1 0 0 1 1.288-.108l1.263.902a7.9 7.9 0 0 1 1.311-.543l.255-1.53A1 1 0 0 1 10.847 2h2.306a1 1 0 0 1 .986.836l.255 1.529a7.9 7.9 0 0 1 1.311.543l1.263-.902a1 1 0 0 1 1.288.107l1.63 1.63a1 1 0 0 1 .107 1.29l-.902 1.261c.219.417.402.856.544 1.312l1.53.255a1 1 0 0 1 .835.986v2.306Zm-2.821 4.395-1.277-1.788a6.832 6.832 0 0 0 .604-1.178c.138-.344.248-.701.329-1.069L21 13.152v-2.305l-2.165-.361a6.85 6.85 0 0 0-.409-1.261 6.986 6.986 0 0 0-.524-.986l1.277-1.788-1.63-1.631-1.789 1.278a6.884 6.884 0 0 0-1.178-.604 6.85 6.85 0 0 0-1.068-.329L13.153 3h-2.306l-.361 2.165a6.85 6.85 0 0 0-1.26.409 6.884 6.884 0 0 0-.986.524L6.451 4.82l-1.63 1.631 1.277 1.788a6.986 6.986 0 0 0-.933 2.247L3 10.847v2.305l2.165.361a6.788 6.788 0 0 0 .409 1.261c.148.344.324.674.524.986l-1.277 1.788 1.63 1.631 1.788-1.277a7.09 7.09 0 0 0 1.179.604c.343.137.7.248 1.068.329L10.847 21h2.306l.361-2.165a6.85 6.85 0 0 0 1.261-.409 7.09 7.09 0 0 0 .986-.524l1.788 1.277 1.63-1.631Z" fill="currentColor" class=""></path></svg>
+        </div>
+        <div class="sidebar-label">Global Settings</div>
+    </div>
+
+    <div class="sidebar-section" id="panel-global" style="display: none;">
+        <h4>DMX Universe</h4>
+        <label >Current: <span id="universe-value">loading..</span></label><br><br>
+        <label>Change to: </label><br>
+        <input id="set-universe" type="number" value="1">
+        <button onclick="setUniverse()"style="width: 50px;">Set</button>
+        <hr>
+        <h4>Global Motion</h4>
+        <label>Acceleration </label><br><br>
+        <input id="global-accel" type="number" placeholder="Accel">
+        <button onclick="globalAccel()" style="width: 50px;">Set</button><br><br>
+        <label>Speed </label><br><br>
+        <input id="global-speed" type="number" placeholder="Speed">
+        <button onclick="globalSpeed()" style="width: 50px;">Set</button><br><br>
+
+
+    </div>
+
+    <!-- PRESETS -->
+    <div class="sidebar-item" onclick="openPanel('presets')">
+        
+        <div class="sidebar-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" class="Icon-module_icon__2a0I8 Icon-module_icon-dark__1fkU4 Icon-module_icon-twoTone__RIhpv" baseclassname="" twotonedclassname="Icon-module_twoTone__jXINr" fillclassname="Icon-module_hidden__cSK0B" fillwithtwotoneclassname="Icon-module_hidden__cSK0B" stroke="currentColor" stroke-width="0"><path d="M6.5 8H8v1H6.5V8Zm0 3H8v1H6.5v-1Zm0 3H8v1H6.5v-1Zm0 3H8v1H6.5v-1Zm3-9h8v1h-8V8Zm0 3h8v1h-8v-1Zm0 3h8v1h-8v-1Zm0 3h8v1h-8v-1Z" fill="currentColor" class=""></path><path fill-rule="evenodd" clip-rule="evenodd" d="M7.5 2a1 1 0 0 0-1 1h-2a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h15a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-2a1 1 0 0 0-1-1h-9Zm9 1h-9v2h9V3Zm-12 1h2v1a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V4h2v16h-15V4Z" fill="currentColor" class=""></path></svg>
+
+
+        </div>
+        <div class="sidebar-label">Presets</div>
+    </div>
+
+    <div class="sidebar-section" id="panel-presets" style="display:none;">
+        <h4>Save current state as</h4>
+        <input type="text" id="preset-name" placeholder="Preset Name" title="Preset Name">
+        <button class="set-global" onclick="savePreset()" title="Save Preset">Save as</button><br><br>
+        <label style="display:flex; align-items:center;"><input type="checkbox" id="save-default" />Save as default</label><br><br>
+        <label style="font-style: italic;">Saving the current state as default will create a configuration file that will be recall automatically on boot.
+        Change the boot configuration bellow</label><br><br>
+        <hr>
+        <h4>Set boot configuration</h4>
+        <label style="font-style: italic;">Feature Coming soon</label>
+        <!--<select id="preset-select" title="Load Preset">
+                    <option value="">Load Preset</option>
+                    <option value="preset1">Preset 1</option>
+                    <option value="preset2">Preset 2</option>
+                    <option value="preset3">Preset 3</option>
+        </select><br><br>
+        <button class="set-global" onclick="SetPreset()" title="Load Preset">Set</button>
+        <button class="set-global" onclick="loadPreset()" title="Load Preset">Load</button><br><br>-->
+
+    </div>
+
+    <!-- SAFETY ICON -->
+    <div class="sidebar-item" onclick="openPanel('safety')">
+        <div class="sidebar-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" width="22px" height="22px" class="icon__yoBxPAkU icon-dark Icon-module_icon__2a0I8 Icon-module_icon-light__27kpC Icon-module_icon-outline__3nv5v" baseclassname="" twotonedclassname="Icon-module_hidden__cSK0B" fillclassname="Icon-module_hidden__cSK0B" fillwithtwotoneclassname="Icon-module_hidden__cSK0B" style="margin-right: 8px;" stroke="currentColor" stroke-width="0"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 17.002c-.421 0-1.015-.171-1.718-.558a9.542 9.542 0 0 1-2.06-1.577C4.872 13.523 4 11.946 4 10.722V4.6l.01-.014a.1.1 0 0 1 .064-.029c1.388-.106 3.77-.449 5.854-1.541a.157.157 0 0 1 .143 0c2.086 1.092 4.467 1.435 5.855 1.541a.099.099 0 0 1 .063.029c.007.007.01.012.01.014l.001.003v6.12c0 1.223-.871 2.8-2.222 4.144-.653.65-1.373 1.198-2.06 1.577-.703.387-1.297.558-1.718.558ZM10 18c-2.625 0-7-4.043-7-7.278v-6.12c0-.55.447-.998.998-1.04 1.336-.102 3.558-.43 5.466-1.43a1.158 1.158 0 0 1 1.072 0c1.908 1 4.13 1.328 5.467 1.43.55.042.997.49.997 1.04v6.12C17 13.957 12.625 18 10 18Zm0-4c.107 0 .474-.113.873-.912.098-.194.187-.413.266-.653a9.844 9.844 0 0 1-2.278 0c.079.24.168.459.266.653.399.799.765.912.873.912Zm0-2.5c.493 0 .96-.04 1.39-.11.07-.43.11-.897.11-1.39 0-.493-.04-.96-.11-1.39-.43-.07-.897-.11-1.39-.11-.493 0-.96.04-1.39.11-.07.43-.11.897-.11 1.39 0 .493.04.96.11 1.39.43.07.897.11 1.39.11Zm1.731 2.107c.205-.394.377-.857.506-1.37.513-.13.976-.3 1.37-.506a4.016 4.016 0 0 1-1.876 1.876ZM10 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM8.269 6.393A4.016 4.016 0 0 0 6.393 8.27a6.296 6.296 0 0 1 1.37-.506c.13-.513.3-.976.506-1.37Zm.858.519a4.881 4.881 0 0 0-.266.653 9.858 9.858 0 0 1 2.278 0 4.881 4.881 0 0 0-.266-.653C10.474 6.113 10.108 6 10 6c-.108 0-.474.113-.873.912Zm2.604-.519c.205.394.377.857.506 1.37.513.13.976.3 1.37.506a4.016 4.016 0 0 0-1.876-1.876Zm1.357 2.734a4.879 4.879 0 0 0-.653-.266 9.844 9.844 0 0 1 0 2.278c.24-.079.459-.168.653-.266.799-.399.912-.765.912-.873 0-.108-.113-.474-.912-.873Zm-6.176 0c.194-.098.413-.187.653-.266a9.858 9.858 0 0 0 0 2.278 4.881 4.881 0 0 1-.653-.266C6.114 10.475 6 10.108 6 10c0-.108.113-.474.912-.873Zm-.519 2.604c.394.205.857.377 1.37.506.13.513.3.976.506 1.37a4.016 4.016 0 0 1-1.876-1.876Z" fill="currentColor" class=""></path></svg>
+        </div>
+        <div class="sidebar-label">Safety</div>
+    </div>
+
+    <div class="sidebar-section" id="panel-safety" style="display:none;">
+    <h4>Panic Mode</h4>
+    <label style="font-style: italic;">This stops all movement and cut Art-Net input. Art-Net needs to be restarted after</label><br><br>
+    <button style="width:200px; background-color: red;" onclick="panic()">PANIC!</button><br><br>
+    <hr>
+    <h4>Gobal Homing</h4>
+    <label style="font-style: italic;">This after all connected modules</label><br><br>
+    <button onclick="setGlobalHome()"style="width: 200px;">Set Home</button><br><br>
+    <button onclick="goGlobalHome()" style="width: 200px;">Go Home</button>
+    </div>
+    <!-- INFO AREA -->
+     <div class="sidebar-item" onclick="openPanel('info')">
+        <div class="sidebar-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" width="22px" height="22px" class="Icon-module_icon__2a0I8 Icon-module_icon-light__27kpC Icon-module_icon-outline__3nv5v Icon-module_active__2qG4Y" baseclassname="" twotonedclassname="Icon-module_hidden__cSK0B" fillclassname="Icon-module_hidden__cSK0B" fillwithtwotoneclassname="Icon-module_hidden__cSK0B" stroke="currentColor" stroke-width="0"><path d="M10 7.5A.75.75 0 1 0 10 6a.75.75 0 0 0 0 1.5Zm0 .9a.5.5 0 0 0-.5.5v4.6a.5.5 0 0 0 1 0V8.9a.5.5 0 0 0-.5-.5Z" fill="currentColor" class=""></path><path fill-rule="evenodd" clip-rule="evenodd" d="M2 10a8 8 0 1 1 16 0 8 8 0 0 1-16 0Zm1 0c0 3.86 3.14 7 7 7s7-3.14 7-7-3.14-7-7-7-7 3.14-7 7Z" fill="currentColor" class=""></path></svg>
+        </div>
+        <div class="sidebar-label">Info</div>
+     </div>
+     <div class="sidebar-section" id="panel-info" style="display: none;">
+        <h4>Documentation</h4>
+        <label style="font-style: italic;">Find all the documentation <a href="https://github.com/e-garbage/Kinelink">here</a></label>
+        <br><br><hr>
+        <h4>About</h4>
+        <label style="font-style: italic">Kinelink is a software by <a href="https://www.structurals.ch/">Structurals</a> developped by e-garbage</label><br><br>
+        <label style="font-style: italic;">version: <label id="version"></label></label>
+     </div>
+
 </div>
 
+<!-- CONTENT AREA -->
+<div id="container"></div>
 
-<div class="global-controls">
-  <h3>Global Controls</h3>
-  <div id="universe-display">
-    Universe: <span id="universe-value">loading...</span>
-  </div>
-  <div>  
-    <input type="number" id="global-speed" placeholder="Speed">
-    <button onclick="globalSpeed()">Set Speed</button>
-  </div>
-  <div>
-    <input type="number" id="global-accel" placeholder="Accel">
-    <button onclick="globalAccel()">Set Accel</button>
-  </div>
-  <div id="motion" style="padding-top: 3vh;padding-bottom: 3vh;">
-  <button style="color:red;font-weight: bold; border:2px solid red" onclick="panic()">PANIC!</button>
-  <button onclick="globalHome()">Set Home All</button>
-  </div>
-</div>
 
-<div id="modules-container"></div>
 
 <script>
-const API_BASE = "/api"; // through Apache proxy
+/*-----------------------------------------------*/
+/* API INTERACTIONS */
+/*-----------------------------------------------*/
 
-let motordata = {};
+const API_BASE="/api";
+let motordata={};
 let modules = [];
+
 
 async function init() {
   const res = await fetch(`${API_BASE}/p/connected`);
@@ -163,48 +505,67 @@ async function init() {
   const addr = Object.keys(motordata).map(Number);
   modules = addr.filter(a => a >= 10);
 }
+// ...existing code...
+async function displayVersion(){
+    const res = await fetch(`${API_BASE}/p/version`);
+    const json = await res.json();
+    const version = json.version ?? JSON.stringify(json);
+    const el = document.getElementById("version");
+    if (el) el.textContent = version;
+}
+
 async function loadModules() {
-  fetchUniverse();
-  const m = await init();
-  const container = document.getElementById("modules-container");
-  container.innerHTML = "";
-  modules.forEach(addr => {
-    const moduleDiv = document.createElement("div");
-    moduleDiv.className = "module";
-    moduleDiv.id = `module-${addr}`;
-    moduleDiv.innerHTML = `
-      <h3>Module ${addr}</h3>
-      <div id="motion">
-        <button class="m" id="mleft" onclick="moveLeft(${addr})">◄</button>
-        <button class="m" id="mstop" onclick="stop(${addr})">Stop</button>
-        <button class="m" id="mright" onclick="moveRight(${addr})">►</button>
-      </div>
-      <div class="mval" >
-        <input type="number" id="vel-${addr}" placeholder="current: ${motordata[addr].speed}">
-      </div>
-      <div id="motion">
-      <button class="m" onclick="setHome(${addr})">Set Home</button>
-      <button class="m" onclick="setMax(${addr})">Set Max</button>
-      </div>
-      <div style="margin:1vh;">
-        <input type="number" id="goto-${addr}" placeholder="Position">
-        <button onclick="gotoPosition(${addr})">Go To</button>
-      </div>
-      <div style="margin:1vh;">
-        <input type="number" id="speed-${addr}" placeholder="current: ${motordata[addr].speed}">
-        <button onclick="setSpeed(${addr})">Set Speed</button>
-      </div>
-      <div style="margin:1vh;">
-        <input type="number" id="accel-${addr}" placeholder="current: ${motordata[addr].accel}">
-        <button onclick="setAccel(${addr})">Set Accel</button>
-      </div>
-      <div class="display">Temperature: <span id="temp-${addr}">0</span>°C</div>
-      <div class="display">Current Position: <span id="pos-${addr}">0</span></div>
-      <div class="display">Max Position: <span id="maxpos-${addr}">0</span></div>
-    `;
-    container.appendChild(moduleDiv);
-  });
-  setInterval(updateStatus, 2000);
+    fetchUniverse();
+    displayVersion();
+    const m =await init();
+    const container = document.getElementById("container");
+    container.innerHTML = "";
+    modules.forEach(addr => {
+        const moduleDiv=document.createElement("div");
+        moduleDiv.className="module-block";
+        moduleDiv.id =`module-${addr}`;
+        moduleDiv.innerHTML=`
+        <div class="module-block-title">
+        <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" class="Icon-module_icon__2a0I8 Icon-module_icon-light__27kpC Icon-module_icon-outline__3nv5v Icon-module_active__2qG4Y" baseclassname="" twotonedclassname="Icon-module_hidden__cSK0B" fillclassname="Icon-module_hidden__cSK0B" fillwithtwotoneclassname="Icon-module_hidden__cSK0B" stroke="currentColor" stroke-width="0"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.5 3.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Zm.915.5a1.5 1.5 0 0 1-2.83 0H4v4.585a1.5 1.5 0 0 1 0 2.83V16h4.585a1.5 1.5 0 0 1 2.83 0H16v-4.585a1.5 1.5 0 0 1 0-2.83V4h-4.585ZM10 2a1.5 1.5 0 0 0-1.415 1H4a1 1 0 0 0-1 1v4.585a1.5 1.5 0 0 0 0 2.83V16a1 1 0 0 0 1 1h4.585a1.5 1.5 0 0 0 2.83 0H16a1 1 0 0 0 1-1v-4.585a1.5 1.5 0 0 0 0-2.83V4a1 1 0 0 0-1-1h-4.585A1.5 1.5 0 0 0 10 2Zm-6 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Zm13 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Zm-7 7a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1ZM6.543 9.452A3.502 3.502 0 0 1 8.13 7.043a5.962 5.962 0 0 0-.754 2.409h-.832ZM8.13 12.96a3.5 3.5 0 0 1-1.6-2.508h.838c.067.907.336 1.758.762 2.508Zm5.343-2.508a3.5 3.5 0 0 1-1.6 2.508c.425-.75.694-1.601.762-2.508h.838Zm-1.6-3.409a3.501 3.501 0 0 1 1.585 2.409h-.832a5.961 5.961 0 0 0-.754-2.409ZM5.5 10.002a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0Zm2.87.45a4.978 4.978 0 0 0 1.13 2.74v-2.74H8.37Zm.01-1H9.5v-2.64a4.978 4.978 0 0 0-1.12 2.64Zm2.12 1v2.74a4.977 4.977 0 0 0 1.13-2.74H10.5Zm1.12-1H10.5v-2.64a4.978 4.978 0 0 1 1.12 2.64Z" fill="currentColor" class=""></path><path fill-rule="evenodd" clip-rule="evenodd" d="M11.414 3.998a1.5 1.5 0 0 1-2.83 0H4v4.585a1.5 1.5 0 0 1 0 2.83v4.585h4.585a1.5 1.5 0 0 1 2.83 0H16v-4.585a1.5 1.5 0 0 1 0-2.83V3.998h-4.586Zm-1.414-2a1.5 1.5 0 0 0-1.415 1H4a1 1 0 0 0-1 1v4.585a1.5 1.5 0 0 0 0 2.83v4.585a1 1 0 0 0 1 1h4.585a1.5 1.5 0 0 0 2.83 0H16a1 1 0 0 0 1-1v-4.585a1.5 1.5 0 0 0 0-2.83V3.998a1 1 0 0 0-1-1h-4.586a1.5 1.5 0 0 0-1.414-1Zm-3.97 7.5a4.003 4.003 0 0 1 2.137-3.056A5.968 5.968 0 0 0 7.02 9.498h-.99Zm2.137 4.056a4.003 4.003 0 0 1-2.137-3.056h.99a5.968 5.968 0 0 0 1.147 3.056Zm4.812-4.056a5.968 5.968 0 0 0-1.146-3.056 4.003 4.003 0 0 1 2.136 3.056h-.99Zm0 1h.99a4.003 4.003 0 0 1-2.136 3.056 5.968 5.968 0 0 0 1.146-3.056Zm-3.48-4.07a4.985 4.985 0 0 0-1.475 3.07H9.5v-3.07Zm-1.475 4.07a4.985 4.985 0 0 0 1.476 3.07v-3.07H8.024Zm2.476 3.07a4.985 4.985 0 0 0 1.475-3.07h-1.476v3.07Zm1.475-4.07a4.985 4.985 0 0 0-1.476-3.07v3.07h1.476Z" fill="currentColor" class="Icon-module_hidden__cSK0B"></path></svg>
+            <span style="font-weight: normal;">Module ${addr}</span>
+            <span> Temp: <span id="temp-${addr}">0</span>°C</span>
+            <span> Pos: <span id="pos-${addr}">0</span></span>
+            <span> Max Pos: <span id="maxpos-${addr}">0</span></span>
+        </div>
+        <div id="motion">
+            <button class="m" id="mleft" onclick="moveLeft(${addr})">◄</button>
+            <button class="m" id="mstop" onclick="stop(${addr})">Stop</button>
+            <button class="m" id="mright" onclick="moveRight(${addr})">►</button>
+        </div>
+            <div class="mval" >
+            <input type="number" id="vel-${addr}" placeholder="current speed: ${motordata[addr].speed}">
+        </div>
+        <div id="motion">
+            <button class="m" onclick="setHome(${addr})" style="width:85px">Set Home</button>
+            <button class="m" onclick="setMax(${addr})" style="width:85px">Set Max</button>
+        </div>
+        <div class="collapsible-title" onclick="toggleModuleParams(${addr})" id="module-params-title-${addr}">
+            <div class="label">Module Parameters</div>
+            <div class="arrow" id="module-params-arrow-${addr}">▸</div>
+        </div>
+        <div class="collapsible-content" id="module-params-${addr}">
+            <div class="param-row">
+                <input type="number" id="goto-${addr}" placeholder="Position">
+                <button onclick="gotoPosition(${addr})">Go To</button>
+            </div>
+            <div class="param-row">
+                <input type="number" id="speed-${addr}" placeholder="current: ${motordata[addr]?.speed ?? 0}">
+                <button onclick="setSpeed(${addr})">Set Speed</button>
+            </div>
+            <div class="param-row">
+                <input type="number" id="accel-${addr}" placeholder="current: ${motordata[addr]?.accel ?? 0}">
+                <button onclick="setAccel(${addr})">Set Accel</button>
+            </div>
+        </div>
+        `;
+        container.appendChild(moduleDiv);
+    });
+    setInterval(updateStatus, 2000);
 }
 
 // Module commands
@@ -246,6 +607,7 @@ async function panic(){
 //Update temperature and current position
 async function updateStatus() {
   init()
+  getArtnet()
   for (const addr of modules){
     const tempRes = await fetch(`${API_BASE}/p/gettemp?addr=${addr}`);
     const temp = await tempRes.json();
@@ -256,6 +618,9 @@ async function updateStatus() {
     document.getElementById(`maxpos-${addr}`).textContent=motordata[addr].maxpos;
   }
 }
+
+
+//Global functions and settings
 async function globalSpeed(){
   let value =null;
   value= document.getElementById("global-speed").value || 0;
@@ -274,22 +639,132 @@ async function globalAccel(){
   })
   await Promise.all(promises);
 }
-async function globalHome() {
+async function setGlobalHome() {
   const promises = modules.map(addr =>{
     const url = `${API_BASE}/m/setref?addr=${addr}`;
     return fetch(url, {method: "GET"});
   })
   await Promise.all(promises);
 }
-
+async function goGlobalHome() {
+    const promises=modules.map(addr =>{
+        const url =`${API_BASE}/m/gotopos?addr=${addr}&pos=${pos}`;
+        return fetch(url, {method:"GET"});
+    })
+    await Promise.all(promises);
+}
 async function fetchUniverse() {
   const response = await fetch(`${API_BASE}/p/get_universe`, {method: "GET"});
-  const data = await response.json();
-  document.getElementById('universe-value').textContent=data.universe;
+  const json =await response.json();
+  const data = json.reply;
+  document.getElementById('universe-value').innerHTML=data;
+}
+async function setUniverse(){
+    let value =null;
+    value = document.getElementById("set-universe").value || 0;
+    await fetch(`${API_BASE}/p/set_universe?val=${value}`,{method: "GET"});
+    fetchUniverse();
+}
+
+async function setArtnet() {
+    try {
+        const res = await fetch(`${API_BASE}/p/set_artnet`, { method: "GET" });
+        const json = await res.json();
+        const data = json.reply;
+
+        const monitor = document.querySelector(".art-net-monitor");
+        const textEl = document.getElementById("art-net-text");
+
+        // determine truthy/active response (accept boolean or common object formats)
+        const isActive = data === true
+            || data === "true"
+            || (typeof data === "object" && (data.active === true || data.active === "true" || data.status === "active"));
+
+        if (monitor) monitor.style.backgroundColor = isActive ? "green" : "red";
+        if (textEl) textEl.innerHTML = isActive ? "Art-net active" : "Art-Net OFF";
+
+        return data;
+    } catch (err) {
+        console.error("setArtnet error:", err);
+    }
+}
+
+async function getArtnet() {
+    try {
+        const res = await fetch(`${API_BASE}/p/get_artnet`, { method: "GET" });
+        const json = await res.json();
+        const data = json.reply;
+
+        const monitor = document.querySelector(".art-net-monitor");
+        const textEl = document.getElementById("art-net-text");
+
+        // determine truthy/active response (accept boolean or common object formats)
+        const isActive = data === true
+            || data === "true"
+            || (typeof data === "object" && (data.active === true || data.active === "true" || data.status === "active"));
+
+        if (monitor) monitor.style.backgroundColor = isActive ? "green" : "red";
+        if (textEl) textEl.innerHTML = isActive ? "Art-net active" : "Art-Net OFF";
+
+        return data;
+    } catch (err) {
+        console.error("setArtnet error:", err);
+    }
+}
+
+async function savePreset(){
+    try{
+        const name = document.getElementById("preset-name").value || "";
+        const saveDefault = !!document.getElementById("save-default").checked; // true/false
+        const res = await fetch(`${API_BASE}/c/save_config?name=${encodeURIComponent(name)}&default=${saveDefault}`, { method: "GET" });
+        const json = await res.json();
+        return json;
+    } catch (err){
+        console.error("Save preset error:", err);
+    }
+}
+
+/* --------------------------------------------- */
+/* ICON CLICK BEHAVIOR */
+/* --------------------------------------------- */
+
+let sidebar = document.getElementById("sidebar");
+let container = document.getElementById("container");
+
+function openPanel(name) {
+    // Always toggle collapse on icon click
+    sidebar.classList.toggle("collapsed");
+    container.classList.toggle("collapsed");
+
+    // If collapsed: do NOT show panel container
+    if (sidebar.classList.contains("collapsed")) return;
+
+    // Expand state: show the relevant panel
+    document.querySelectorAll(".sidebar-section").forEach(
+        sec => sec.style.display = "none"
+    );
+
+    document.getElementById("panel-" + name).style.display = "block";
+}
+
+// Toggle helper for module parameter panels
+function toggleModuleParams(addr) {
+    const content = document.getElementById(`module-params-${addr}`);
+    const arrow = document.getElementById(`module-params-arrow-${addr}`);
+    if (!content) return;
+    const isOpen = content.classList.toggle('open');
+    if (isOpen) {
+        // set max-height to scrollHeight so transition animates
+        content.style.maxHeight = content.scrollHeight + "px";
+        arrow.style.transform = "rotate(90deg)";
+    } else {
+        content.style.maxHeight = "0";
+        arrow.style.transform = "rotate(0deg)";
+    }
 }
 
 window.onload = loadModules();
-
 </script>
+
 </body>
 </html>

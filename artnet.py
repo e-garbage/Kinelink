@@ -35,8 +35,13 @@ class utils():
     
 class ArtNetProtocol(asyncio.DatagramProtocol):
     def __init__(self, motor_manager=None, universe=0):
+        self.enabled = True
         self.motor_manager = motor_manager
         self.universe = universe
+    def disable (self):
+        self.enabled=False
+    def enable (self):
+        self.enabled=True
     # to use when universe is made accessible through API.
     #work in progress
     def set_universe (self, new_universe:int):
@@ -49,6 +54,8 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
         logging.info(f"Art-Net listener listening on {transport.get_extra_info('sockname')}")
 
     def datagram_received(self, data: bytes, addr):
+        if not self.enabled:
+            return
         if not data.startswith(ARTNET_HEADER):
             return
         opcode = struct.unpack("<H", data[8:10])[0]

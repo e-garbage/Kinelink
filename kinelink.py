@@ -11,7 +11,7 @@ import argparse
 
 
 #CHANGE VERSION NUMBER HERE
-version=1.2
+version=1.3
 console=Console()
 
 class utils: 
@@ -45,10 +45,11 @@ async def start_artnet(interface, port, universe, motor_manager=None):
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: ArtNetProtocol(motor_manager, universe),
         local_addr=(interface, port)
-    )    
+    )
+    return transport, protocol 
 
 async def start_api():
-    web_api.app.state.univers=ARTNET_UNIVERSE
+    """ web_api.app.state.univers=ARTNET_UNIVERSE """
     config =uvicorn.Config(web_api.app, host=API_IP, port=API_PORT, log_level="debug")
     server = uvicorn.Server(config)
     await server.serve()
@@ -56,10 +57,16 @@ async def start_api():
 async def main():
     motor_manager= MotorManager(port=SERIAL_PORT, baudrate=BAUDRATE, default_accel=ACC, default_speed=S)
     web_api.motor_manager=motor_manager
+    web_api.app.state.version=version
     await motor_manager.start()
     await asyncio.sleep(1)
     await motor_manager.initialize(S, ACC)
-    await asyncio.gather(start_api(), start_artnet(ARTNET_IP, ARTNET_PORT,ARTNET_UNIVERSE, motor_manager))
+    #await asyncio.gather(start_api(), start_artnet(ARTNET_IP, ARTNET_PORT,ARTNET_UNIVERSE, motor_manager))
+    transport, artnet_protocol = await start_artnet(ARTNET_IP, ARTNET_PORT,ARTNET_UNIVERSE, motor_manager)
+    web_api.artnet_protocol =artnet_protocol
+    web_api.app.state.motor_manager=motor_manager
+    web_api.app.state.artnet=artnet_protocol
+    await start_api()
 
 if __name__ == "__main__":
     #clear terminal

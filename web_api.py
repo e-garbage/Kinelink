@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Query, Request
 #from fastapi.middleware.cors import CORSMiddleware
 from TMCL import MotorManager
+from artnet import ArtNetProtocol
 from pathlib import Path
 import logging
 import os, json
@@ -45,7 +46,7 @@ os.makedirs(CONFIG_DIR, exist_ok=True)
 app = FastAPI()
 
 
-app.state.universe = 0
+#app.state.universe = 0
 origins=[
     "http://localhost",
     "http://localhost:80",
@@ -61,10 +62,11 @@ origins=[
     allow_headers=["*"],
 ) """
 motor_manager: MotorManager | None = None
+artnet_protocol: ArtNetProtocol | None = None
 top_speed=1000 ### TMCL motors allows speed from 1 to 2047, for safety reason it can be limited here to avoid crazy behaviour due to internet loss or bugs
 top_accel=1000 ### Same as top speed, top accel in TMCL is in the range of 1 to 2047, but limited here for safety reasons
 
-universe: None
+#universe: None
 
 @app.on_event("startup") ######### on_event deprecated, change for lifespan if possible (check)
 async def startup_event():
@@ -210,15 +212,27 @@ async def p_getpos(
 
 @app.get("/p/panic", description="stop all motors between 0 to 255 with MST command")
 async def p_panic():
-    for i in range(0,256):
+    artnet_protocol.disable()
+    reply = await motor_manager.panic()
+    return{"call from":"p_panic","reply":reply}
+    """ for i in range(0,256):
         await motor_manager.mst(i)
-    return {"call from":"p_panic"}
+    return {"call from":"p_panic"} """
 
+@app.get("/p/set_artnet", description="Switch between True and False in order to Activate or Deactivate Art-net input, and respond with current state")
+async def p_set_artnet():
+    if artnet_protocol.enabled == True:
+        artnet_protocol.disable()
+        r=False
+    else:
+        artnet_protocol.enable()
+        r=True
+    return {"call from":"p_set_artnet","reply":r}
 
-@app.get("/p/scan", description="scan for connected motors")
-async def p_scan():
-    reply = await motor_manager.scan()
-    return {"call from":"p_scan", "reply":reply}
+@app.get("/p/get_artnet", description="Gives artnet input status either True for Active or False for Deactivated")
+async def p_get_artnet():
+    r= artnet_protocol.enabled
+    return{"call from":"p_get_artnet","reply":r}
 
 @app.get("/p/connected", description="return the number of TMCL modules (motors) connected and available after scan")
 async def p_connected():
@@ -226,23 +240,36 @@ async def p_connected():
         return []
     return motor_manager.connected
 
-
 @app.get("/p/get_universe", description="gives the current art-net universe in use on the node")
 async def p_get_universe():
-    return {"universe": app.state.universe}
+    r=artnet_protocol.universe
+    return {"call from":"p_get_universe","reply":r}
+
+@app.get("/p/set_universe", description="set art-net universe in use on the node")
+async def p_set_universe(
+    val: int = Query(..., description="Art-Net universe value(0-1024)")
+    ):
+    e:str|None=None
+    if not (0<=val<=1024):
+        val=0
+        e=(e or "")+f"Wrong input universe value. set to {val}."
+    artnet_protocol.universe=val
+    return {"call from":"p_set_universe","api error":e}
 
 ### Configuration Save and Recall
 
-@app.post("/c/save_config")
-async def save_config(request:Request):
-    data = await request.json()
-    save_name = data.get("name", "unnamed")
-    is_default = data.get("default", False)
-    config = data.get ("config",{})
+@app.get("/c/save_config", description="Save the current global configuration to file in the back-end. This configuration will be use at boot if default is set to True to set all parameters and position values to every connected modules")
+async def c_save_config(
+    name: str =Query(..., description="Name of the configuration file"),
+    default: bool = Query(..., description="Boolean switch for default configuration on boot")
+    ):
+    data = motor_manager.connected
+    save_name = name
+    is_default= default
     path = os.path.join(CONFIG_DIR, f"{save_name}.json")
     try:
         with open(path, "w") as f:
-            json.dump(config, f, indent=4)
+            json.dump(data, f, indent=4)
         if is_default:
             default_path =os.path.join(CONFIG_DIR, "default.json")
             if os.path.exists(default_path):
@@ -251,7 +278,22 @@ async def save_config(request:Request):
         return{"status": "ok", "message": f"Configuration saved as '{save_name}'"}
     except Exception as e:
         return{"status":"error", "message": str(e)}
-    
+
+## Utility functions
+
+@app.get("/p/version", description="Return application version")
+async def p_version():
+    return {"version": getattr(app.state, "version", None)}
+
+
+
+## BACKLOG NOT IMPLEMENTED FEATURES YET
+
+@app.get("/p/scan", description="scan for connected motors")
+async def p_scan():
+    reply = await motor_manager.scan()
+    return {"call from":"p_scan", "reply":reply}
+
 @app.get("/c/list_config")
 async def list_configs():
     configs = []
@@ -279,4 +321,4 @@ async def delete_config(name: str):
     if not os.path.exists(path):
         return {"status": "error", "message": f"No config named {name}"}
     os.remove(path)
-    return {"status": "ok", "message": f"Deleted {name}.json"}
+    return {"status": "ok", "message": f"Deleted {name}.json"} 
