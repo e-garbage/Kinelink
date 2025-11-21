@@ -96,7 +96,8 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
                 ch1, ch2, ch3, ch4, ch5 = dmx_data[base:base+5]
                 logging.debug(f"{motor_addr,ch1,ch2,ch3,ch4,ch5}")
                 maxpos = connected.get("maxpos")
-                maxspeed = connected.get("speed")
+                maxspeed = connected.get("maxspeed")
+                minspeed = connected.get("minspeed")
                 q= motor_manager.motor_queues.get(motor_addr)
                 if not q :
                     continue
@@ -108,7 +109,7 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
                     except asyncio.QueueEmpty:
                         break
 
-                # --- CH1: Bidirectional speed ---
+                """ # --- CH1: Bidirectional speed ---
                 if 2 <= ch1 <= 127:  # move left
                     speed = int(utils.map_value(ch1, 2,127,maxspeed, 1))
                     #asyncio.create_task(motor_manager.ror(motor_addr, speed))
@@ -119,7 +120,12 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
                 elif 129 <= ch1 <= 255:  # move right
                     speed = int(utils.map_value(ch1, 129,255,1, maxspeed))
                     #asyncio.create_task(motor_manager.rol(motor_addr, speed))
-                    q.put_nowait((motor_manager.rol, (motor_addr, speed)))
+                    q.put_nowait((motor_manager.rol, (motor_addr, speed))) """
+                
+                # --- CH1: Change Speed ---
+                if 1<=ch1<=255:
+                    val= int(utils.map_value(ch1,1,255, minspeed, maxspeed))
+                    q.put_nowait(motor_manager.sap(motor_addr,4, val))
 
                 # --- CH2: Move left ---
                 elif 3 <= ch2 <= 255:

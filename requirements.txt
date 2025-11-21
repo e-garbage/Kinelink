@@ -5,3 +5,4 @@ rich
 argparse
 pyserial-asyncio
 uvicorn
+telegram-python-bot

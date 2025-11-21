@@ -1,72 +1,30 @@
 from fastapi import FastAPI, Query, Request
-#from fastapi.middleware.cors import CORSMiddleware
 from TMCL import MotorManager
 from artnet import ArtNetProtocol
 from pathlib import Path
 import logging
 import os, json
-
-"""
-API commands:
-##tmcl motion commands
-/m/left (addr, speed)
-/m/right (addr, speed)
-/m/stop (addr)
-/m/setref (addr)
-/m/gotopos (addr, pos, speed)
-
-##tmcl parameters commands
-/p/setmin (addr, pos)
-/p/setmax (addr, pos)
-/p/setspeed (addr, speed)
-/p/setaccel (addr, accel)
-/p/gettemp (addr)
-/p/getstatus (addr)
-/p/getid (addr)
-/p/getposition (addr)
-/p/panic (addr)
-/scan ()
-
-## ArtNet commands
-/a/setartnetuniverse (value)
-/a/setartnetport (ip)
-/a/artnet_on (bool)
-
-API request logic:
-m=motor motion
-p=motor parameters
-a=artnet parameters
-
-"""
-
+from telegramnotif import initialize_telegram_notifier, get_telegram_notifier
 
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_DIR = BASE_DIR / "configs"
 os.makedirs(CONFIG_DIR, exist_ok=True)
-app = FastAPI()
+app = FastAPI(
+    title="Kinelink",
+    description="Kinelink API",
+    version=1
+)
 
-
-#app.state.universe = 0
-origins=[
-    "http://localhost",
-    "http://localhost:80",
-    "https://localhost",
-    "https://localhost:8000",
-    
-]
-""" app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-) """
 motor_manager: MotorManager | None = None
 artnet_protocol: ArtNetProtocol | None = None
 top_speed=1000 ### TMCL motors allows speed from 1 to 2047, for safety reason it can be limited here to avoid crazy behaviour due to internet loss or bugs
 top_accel=1000 ### Same as top speed, top accel in TMCL is in the range of 1 to 2047, but limited here for safety reasons
 
-#universe: None
+""" telegram_notifier = initialize_telegram_notifier(
+    bot_token="8510225780:AAEb1whfYLUgXxCHVPPF5fnUgdzmcdsmZsE",  # Replace with actual token
+    chat_id="-5097806322",       # Replace with actual chat ID
+    motor_manager=motor_manager
+) """
 
 @app.on_event("startup") ######### on_event deprecated, change for lifespan if possible (check)
 async def startup_event():
@@ -141,8 +99,8 @@ async def m_gotopos(
     return {"call from":"m_gotopos","reply":reply, "api error":e}
 
 # motor parameters command
-@app.get("/p/setmax", description="Set maximum position possible (limit switch) using SAP command")
-async def p_setmax(
+@app.get("/p/setmaxpos", description="Set maximum position possible (limit switch) using SAP command")
+async def p_setmaxpos(
     addr: int = Query(..., description="Module (motor) Address 0-255"),
     pos: int = Query(..., description="position to go -100000 - 100000")
     ):
@@ -156,21 +114,36 @@ async def p_setmax(
     motor_manager.connected[addr]["maxpos"]=int(pos)
     return {"call from":"p_setmax", "api error":e}
 
-@app.get("/p/setspeed", description="Set maximum speed for motion command like /m/gotopos using SAP command. /m/left and /m/right overides this with their speed value")
-async def p_setpeed(
+@app.get("/p/setmaxspeed", description="Set maximum speed for motion command like /m/gotopos using SAP command. /m/left and /m/right overides this with their speed value")
+async def p_setmaxpeed(
     addr: int = Query(..., description="Module (motor) Address 0-255"),
     speed: int = Query(..., description=f"max motion Speed 0-{top_speed}")
     ):
     e:str|None=None
     if not (1<=speed<=top_speed):
-        speed=50
+        speed=motor_manager.default_maxspeed
         e=(e or "")+f"Wrong input speed. speed set to {speed}. "
     if not (0<=addr<=255):
         addr=0
         e=(e or "")+f"Wrong input address. address set to {addr}. "
     reply = await motor_manager.sap(addr, 4, speed)
-    motor_manager.connected[addr]["speed"]=int(speed)
-    return {"call from":"p_setpeed","reply":reply, "api error":e}
+    motor_manager.connected[addr]["maxspeed"]=int(speed)
+    return {"call from":"p_setmaxpeed","reply":reply, "api error":e}
+
+@app.get("/p/setminspeed", description="Set minimum speed for motion command like SAP command. This only affects gotopos commands coming from Art-Net dependency on DMX Channel 1")
+async def p_setminspeed(
+    addr: int = Query(..., description="Module (motor) Address 0-255"),
+    speed: int = Query(..., description=f"min motion Speed 0-{top_speed}")
+    ):
+    e:str|None=None
+    if not (1<=speed<=top_speed):
+        speed=motor_manager.default_minspeed
+        e=(e or "")+f"Wrong input speed. speed set to {speed}. "
+    if not (0<=addr<=255):
+        addr=0
+        e=(e or "")+f"Wrong input address. address set to {addr}. "
+    motor_manager.connected[addr]["minspeed"]=int(speed)
+    return {"call from":"p_setminpeed", "api error":e}
 
 @app.get("/p/setaccel", description="Set maximum acceleration for motion command like /m/gotopos using SAP command.")
 async def p_setaccel(
@@ -256,6 +229,19 @@ async def p_set_universe(
     artnet_protocol.universe=val
     return {"call from":"p_set_universe","api error":e}
 
+@app.get("/p/set_addr", description="Set a new address to a given module")
+async def p_set_addr(
+    current_addr: int =Query(..., description="Current module address"),
+    new_addr: int = Query(...,description="New module address")
+    ):
+    e:str|None=None
+    if not (0 <= current_addr <= 255 and 0 <= new_addr <= 255):
+        e=(e or "")+f"Wrong address range with current address {current_addr} or new address {new_addr}. Both must be integers between 0 and 255."
+        return {"call from":"p_set_addr","api error":e}
+    reply = await motor_manager.sgp(current_addr,65,0,new_addr)
+    return {"call from":"p_set_addr","reply":reply,"api error":e}
+
+
 ### Configuration Save and Recall
 
 @app.get("/c/save_config", description="Save the current global configuration to file in the back-end. This configuration will be use at boot if default is set to True to set all parameters and position values to every connected modules")
@@ -285,6 +271,32 @@ async def c_save_config(
 async def p_version():
     return {"version": getattr(app.state, "version", None)}
 
+""" @app.get("/n/enable", description="enable telegram notifications")
+async def n_enable():
+    try:
+        telegram_notifier.enable_notifications()
+        return{"call from":"n_enable", "reply":"notifications enabled"}
+    except Exception as e:
+        return{"call from":"n_enable", "reply":e}
+
+@app.get("/n/disable", description="disable telegram notifications")
+async def n_disable():
+    try:
+        telegram_notifier.disable_notifications()
+        return{"call from":"n_disable", "reply":"notifications disabled"}
+    except Exception as e:
+        return{"call from":"n_disable", "reply":e}
+
+@app.get("/n/interval", description="set notification intervals")
+async def set_notification_interval(val: int):
+    try:
+        telegram_notifier.set_interval(val)
+        return {"status": "success", "message": f"Interval set to {val} seconds"}
+    except Exception as e:
+        return{"call from":"n_disable", "reply":e} """
+
+
+    
 
 
 ## BACKLOG NOT IMPLEMENTED FEATURES YET

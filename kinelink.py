@@ -11,7 +11,7 @@ import argparse
 
 
 #CHANGE VERSION NUMBER HERE
-version=1.3
+version=1.4
 console=Console()
 
 class utils: 
@@ -55,12 +55,12 @@ async def start_api():
     await server.serve()
 
 async def main():
-    motor_manager= MotorManager(port=SERIAL_PORT, baudrate=BAUDRATE, default_accel=ACC, default_speed=S)
+    motor_manager= MotorManager(port=SERIAL_PORT, baudrate=BAUDRATE, default_accel=ACC, default_maxspeed=MAXSPEED, default_minspeed=MINSPEED, module_range=MODULE_RANGE)
     web_api.motor_manager=motor_manager
     web_api.app.state.version=version
     await motor_manager.start()
     await asyncio.sleep(1)
-    await motor_manager.initialize(S, ACC)
+    await motor_manager.initialize()
     #await asyncio.gather(start_api(), start_artnet(ARTNET_IP, ARTNET_PORT,ARTNET_UNIVERSE, motor_manager))
     transport, artnet_protocol = await start_artnet(ARTNET_IP, ARTNET_PORT,ARTNET_UNIVERSE, motor_manager)
     web_api.artnet_protocol =artnet_protocol
@@ -117,11 +117,16 @@ if __name__ == "__main__":
                         action="store_true",
                         default=False,
                         help="If used, switch to debugging log")
-    parser.add_argument("-s",
-                        "--speed",
+    parser.add_argument("-maxs",
+                        "--max_speed",
                         type=int,
                         default=100,
-                        help="Set the default speed for motion command like GOTOPOSITION (MVP).")
+                        help="Set the default maximum speed for motion command like GOTOPOSITION (MVP) coming from art-net. This speed is used for GOTOPOSITION coming from API or debug")
+    parser.add_argument("-mins",
+                        "--min_speed",
+                        type=int,
+                        default=10,
+                        help="Set the default minimum speed for motion command like GOTOPOSITION (MVP) coming from art-net.")
     parser.add_argument("-a",
                         "--acceleration",
                         type=int,
@@ -132,6 +137,11 @@ if __name__ == "__main__":
                         type=int,
                         default=5000,
                         help="Maxium position use in Art-Net implementation. When reached, the motor will stop, and won't go further.")
+    parser.add_argument("-r",
+                        "--module_range",
+                        type=int,
+                        default=255,
+                        help="Size of the module range to scan at boot. Max is 255 due to TMCL limitations. For debug purposes mainly.")
     args = parser.parse_args()
     #define logging mode (verbose for full log, or default user-friendly)
     utils.verbose_mode(args.verbose)
@@ -143,7 +153,9 @@ if __name__ == "__main__":
     BAUDRATE=args.baudrate
     API_IP=args.api_ip
     API_PORT=args.api_port
-    S=args.speed
+    MAXSPEED=args.max_speed
+    MINSPEED=args.min_speed
+    MODULE_RANGE=args.module_range
     ACC=args.acceleration
 
     asyncio.run(main())

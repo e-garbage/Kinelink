@@ -96,7 +96,7 @@ class MotorProtocol(asyncio.Protocol):
                 self.response_future = None
 
 class MotorManager:
-    def __init__(self, port='/dev/ttyUSB0', baudrate=115200, default_speed=100, default_accel=100, default_maxpos=5000):
+    def __init__(self, port='/dev/ttyUSB0', baudrate=115200, default_maxspeed=100, default_minspeed=10, default_accel=100, default_maxpos=5000, module_range=255):
         """
             TMCL command class, defines all motion command as well as command builder, serial packet builder, command sender, response parser.
             It also includes a Scanner to automatically detect available motors through the serial interface.
@@ -105,16 +105,19 @@ class MotorManager:
         self.baudrate = baudrate
         self.protocol = None
         self.connected={}
-        self.default_speed = default_speed
+        self.scanned={}
+        self.module_range=module_range
+        self.default_maxspeed = default_maxspeed
+        self.default_minspeed = default_minspeed
         self.default_accel = default_accel
         self.default_maxpos = default_maxpos
         self.command_queue = asyncio.Queue()
         self.motor_queues={}
 
-    async def initialize(self,s, acc):
+    async def initialize(self):
         logging.info("Initializing connected motors, please wait ...")
         await self.scan()
-        logging.info(f"Scan complete - found {len(self.connected)}")
+        logging.info(f"Scan complete - found {len(self.scanned)}")
         logging.info("Setting up current position as home for each ...")
         logging.info("Looking for existing configuration file to recall now")
         default_path = os.path.join(CONFIG_DIR, "default.json")
@@ -126,6 +129,7 @@ class MotorManager:
                 # keys may be strings when saved as JSON, convert to int
                 # and ensure inner values are ints with sensible defaults
                 conn = {}
+
                 for k, v in loaded.items():
                     try:
                         addr = int(k)
@@ -136,9 +140,10 @@ class MotorManager:
                         logging.warning(f"Invalid value for motor {addr} in config; expected dict, got {type(v)}")
                         continue
                     conn[addr] = {
-                        "speed": int(v.get("speed", self.default_speed)),
+                        "maxspeed": int(v.get("maxspeed",self.default_maxspeed)),
                         "accel": int(v.get("accel", self.default_accel)),
                         "maxpos": int(v.get("maxpos", self.default_maxpos)),
+                        "minspeed": int(v.get("minspeed", self.default_minspeed))
                     }
                 self.connected = conn
                 logging.info(f"Loaded connected configuration from {default_path}")
@@ -157,15 +162,24 @@ class MotorManager:
         else:
             for a in self.connected:
                 try:
+                    conn={}
                     await self.mst(a) #stop any ongoing motion for safety reasons
                     await self.sap(a,1,0)  #set current position as Home (0)
-                    await self.sap(a, 4, s) # set max speed as s
+                    await self.sap(a, 4, maxspeed) # set max speed as s
                     await self.sap(a, 5, acc) #set max accel
+                    conn[a]={
+                        "maxspeed":self.default_maxspeed,
+                        "accel":self.default_accel,
+                        "maxpos":self.default_maxpos,
+                        "minspeed":self.default_minspeed
+                    }
+
                     q = asyncio.Queue(maxsize=1)  # Only keep the latest command
                     self.motor_queues[a] = q
                     asyncio.create_task(self._motor_worker(a, q))
                 except Exception as e:
                     logging.error(f"Failed to initialize default positionm motor {a}: {e}")
+            self.connected = conn
 
         logging.info("Initialization complete")
 
@@ -296,20 +310,19 @@ class MotorManager:
     async def scan(self):
         logging.debug(f"Scanning available TMCL motors over {self.port}")
         found = {}
-        for addr in range(25):
+        for addr in range(self.module_range):
             await asyncio.sleep(timeout)
             try:
                 resp = await self.gio(addr, 9, 1) # temperature query
                 if resp is not None:
                     resp[1] == addr  # addr check after parse
-                    #found.append(addr)
-                    found[addr] = {"speed":self.default_speed, "accel":self.default_accel, "maxpos": self.default_maxpos}
+                    found[addr] = {"temp":resp[4]}
                     logging.info(f"Motor found at address {addr} at {resp[4]}°C")
             except asyncio.TimeoutError:
                 pass
             except Exception as e:
                 logging.debug(f"No motor at address {addr}: {e}")
-        self.connected = found
+        self.scanned = found
         return found
 
     async def tmcl_command_builder (self, addr:int, cmd:int, param:int, bank:int, value:int, name:str="TMCL"):
