@@ -4,11 +4,7 @@ import logging
 import struct
 
 """
-CH1     bi (directional) mode   002-127     speed left (max speed in settings to 1)
-                                128         stop (MST)
-                                129-255     speed right (1 to max speed in settings)
-                                000-001         channel not in use
-
+CH1    
 CH2     move left               003-255     speed left (up to max speed in settings)
                                 001-002     stop (MST)
                                 000-001        channel not in use
@@ -42,8 +38,6 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
         self.enabled=False
     def enable (self):
         self.enabled=True
-    # to use when universe is made accessible through API.
-    #work in progress
     def set_universe (self, new_universe:int):
         """Dynamically update artnet universe"""
         logging.info(f"Art-Net universe changed from {self.universe} to {new_universe}")
@@ -122,10 +116,23 @@ class ArtNetProtocol(asyncio.DatagramProtocol):
                     #asyncio.create_task(motor_manager.rol(motor_addr, speed))
                     q.put_nowait((motor_manager.rol, (motor_addr, speed))) """
                 
-                # --- CH1: Change Speed ---
-                if 1<=ch1<=255:
-                    val= int(utils.map_value(ch1,1,255, minspeed, maxspeed))
-                    q.put_nowait(motor_manager.sap(motor_addr,4, val))
+                # --- CH1: Change Speed (deduplicate per motor) ---
+                if 1 <= ch1 <= 255:
+                    # initialize per-motor last-value dict lazily
+                    if not hasattr(self, "_last_ch1s"):
+                        self._last_ch1s = {}
+                    last_ch1s = self._last_ch1s
+
+                    # If this motor's CH1 is unchanged, skip queuing
+                    if last_ch1s.get(motor_addr) == ch1:
+                        pass
+                    else:
+                        val = int(utils.map_value(ch1, 1, 255, minspeed, maxspeed))
+                        try:
+                            q.put_nowait((motor_manager.sap, (motor_addr, 4, val)))
+                        except Exception:
+                            logging.debug(f"Failed to queue SAP for motor {motor_addr}")
+                        last_ch1s[motor_addr] = ch1
 
                 # --- CH2: Move left ---
                 elif 3 <= ch2 <= 255:

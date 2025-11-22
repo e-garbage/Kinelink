@@ -249,21 +249,50 @@ async def c_save_config(
     name: str =Query(..., description="Name of the configuration file"),
     default: bool = Query(..., description="Boolean switch for default configuration on boot")
     ):
+    # Validate runtime objects
+    if motor_manager is None:
+        return {"status": "error", "message": "motor_manager not initialized"}
+    if artnet_protocol is None:
+        return {"status": "error", "message": "artnet_protocol not initialized"}
+
     data = motor_manager.connected
+    artnet_data = {"universe": artnet_protocol.universe}
     save_name = name
-    is_default= default
+    is_default = default
     path = os.path.join(CONFIG_DIR, f"{save_name}.json")
+    artnet_path = os.path.join(CONFIG_DIR, f"{save_name}_artnet.json")
     try:
+        # write motor configuration
         with open(path, "w") as f:
             json.dump(data, f, indent=4)
+
+        # write artnet configuration
+        with open(artnet_path, "w") as f:
+            json.dump(artnet_data, f, indent=4)
+
         if is_default:
-            default_path =os.path.join(CONFIG_DIR, "default.json")
-            if os.path.exists(default_path):
-                os.remove(default_path)
+            default_path = os.path.join(CONFIG_DIR, "default.json")
+            try:
+                if os.path.exists(default_path) or os.path.islink(default_path):
+                    os.remove(default_path)
+            except Exception:
+                pass
             os.symlink(path, default_path)
-        return{"status": "ok", "message": f"Configuration saved as '{save_name}'"}
+
+            default_artnet = os.path.join(CONFIG_DIR, "default_artnet.json")
+            try:
+                if os.path.exists(default_artnet) or os.path.islink(default_artnet):
+                    os.remove(default_artnet)
+            except Exception:
+                pass
+            os.symlink(artnet_path, default_artnet)
+
+        return {"status": "ok", "message": f"Configuration saved as '{save_name}'"}
     except Exception as e:
-        return{"status":"error", "message": str(e)}
+        return {"status": "error", "message": str(e)}
+
+
+
 
 ## Utility functions
 

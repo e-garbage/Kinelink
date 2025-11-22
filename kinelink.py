@@ -8,7 +8,11 @@ from rich.logging import RichHandler
 from rich.console import Console
 import os
 import argparse
+from pathlib import Path
+import json
 
+BASE_DIR = Path(__file__).resolve().parent
+CONFIG_DIR = BASE_DIR / "configs"
 
 #CHANGE VERSION NUMBER HERE
 version=1.4
@@ -40,6 +44,37 @@ class utils:
         LOGGING_FORMAT='%(message)s'
         logging.basicConfig(level=log_mod, format=LOGGING_FORMAT, handlers=[RichHandler(rich_tracebacks=False, show_path=False, markup=True)])
     
+def define_artnet_universe(arg_universe=None):
+    """Return the Art-Net universe to use.
+
+    Priority:
+    1. If configs/default_artnet.json exists and contains a numeric 'universe' key -> use that.
+    2. Else if arg_universe is not None -> use int(arg_universe).
+    3. Else -> return 0.
+    """
+    default_artnet_path = os.path.join(str(CONFIG_DIR), "default_artnet.json")
+    if os.path.exists(default_artnet_path) or os.path.islink(default_artnet_path):
+        try:
+            with open(default_artnet_path, "r") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict) and "universe" in loaded:
+                try:
+                    return int(loaded["universe"])
+                except Exception:
+                    logging.warning(f"Invalid 'universe' value in {default_artnet_path}; falling back")
+            else:
+                logging.warning(f"{default_artnet_path} does not contain 'universe' key; falling back")
+        except Exception as e:
+            logging.error(f"Failed to load default artnet config {default_artnet_path}: {e}")
+
+    if arg_universe is not None:
+        try:
+            return int(arg_universe)
+        except Exception:
+            logging.warning("Invalid CLI artnet_universe value; falling back to 0")
+
+    return 0
+
 async def start_artnet(interface, port, universe, motor_manager=None):
     loop= asyncio.get_running_loop()
     transport, protocol = await loop.create_datagram_endpoint(
@@ -61,7 +96,6 @@ async def main():
     await motor_manager.start()
     await asyncio.sleep(1)
     await motor_manager.initialize()
-    #await asyncio.gather(start_api(), start_artnet(ARTNET_IP, ARTNET_PORT,ARTNET_UNIVERSE, motor_manager))
     transport, artnet_protocol = await start_artnet(ARTNET_IP, ARTNET_PORT,ARTNET_UNIVERSE, motor_manager)
     web_api.artnet_protocol =artnet_protocol
     web_api.app.state.motor_manager=motor_manager
@@ -148,7 +182,7 @@ if __name__ == "__main__":
     #define constants:
     ARTNET_PORT=args.artnet_port
     ARTNET_IP=args.artnet_ip
-    ARTNET_UNIVERSE=args.artnet_universe
+    ARTNET_UNIVERSE=define_artnet_universe()
     SERIAL_PORT=args.serial_port
     BAUDRATE=args.baudrate
     API_IP=args.api_ip
