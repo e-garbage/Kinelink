@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 from typing import Dict, Any
-import telegram
+#import telegram
 from TMCL import MotorManager  # Assuming this is your motor manager module
 motor_manager: MotorManager | None = None
 class TelegramNotifier:

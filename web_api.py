@@ -4,7 +4,7 @@ from artnet import ArtNetProtocol
 from pathlib import Path
 import logging
 import os, json
-from telegramnotif import initialize_telegram_notifier, get_telegram_notifier
+#from telegramnotif import initialize_telegram_notifier, get_telegram_notifier
 
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_DIR = BASE_DIR / "configs"
