@@ -89,7 +89,7 @@ async def m_gotopos(
     pos: int = Query(..., description="position to go -100000 - 100000")
     ):
     e:str|None=None
-    if not (-100000<=pos<=100000):
+    if not (-2147483647<=pos<=2147483647):
         pos=0
         e=(e or "")+f"Wrong input speed. speed set to {pos}. "
     if not (0<=addr<=255):
@@ -105,7 +105,7 @@ async def p_setmaxpos(
     pos: int = Query(..., description="position to go -100000 - 100000")
     ):
     e:str|None=None
-    if not (-100000<=pos<=100000):
+    if not (-2147483647<=pos<=2147483647):
         pos=0
         e=(e or "")+f"Wrong input speed. speed set to {pos}. "
     if not (0<=addr<=255):
